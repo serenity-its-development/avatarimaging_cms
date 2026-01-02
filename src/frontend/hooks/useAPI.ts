@@ -368,3 +368,117 @@ export function useReorderStages() {
     },
   })
 }
+
+// =============================================================================
+// TAGS
+// =============================================================================
+
+export function useTags(category?: string, includeInactive = false) {
+  return useQuery({
+    queryKey: ['tags', { category, includeInactive }],
+    queryFn: () => api.getTags(category, includeInactive),
+    staleTime: 60000, // Tags don't change often
+  })
+}
+
+export function useTag(id: string) {
+  return useQuery({
+    queryKey: ['tags', id],
+    queryFn: () => api.getTag(id),
+    enabled: !!id,
+  })
+}
+
+export function useCreateTag() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.createTag,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tags'] })
+    },
+  })
+}
+
+export function useUpdateTag() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: api.UpdateTagInput }) =>
+      api.updateTag(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['tags'] })
+      queryClient.invalidateQueries({ queryKey: ['tags', variables.id] })
+    },
+  })
+}
+
+export function useDeleteTag() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.deleteTag,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tags'] })
+    },
+  })
+}
+
+export function useContactTags(contactId: string) {
+  return useQuery({
+    queryKey: ['tags', 'contact', contactId],
+    queryFn: () => api.getContactTags(contactId),
+    enabled: !!contactId,
+  })
+}
+
+export function useAddTagToContact() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ contactId, tagId, addedBy }: { contactId: string; tagId: string; addedBy?: string }) =>
+      api.addTagToContact(contactId, tagId, addedBy),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['tags', 'contact', variables.contactId] })
+      queryClient.invalidateQueries({ queryKey: ['tags'] })
+      queryClient.invalidateQueries({ queryKey: ['contacts'] })
+    },
+  })
+}
+
+export function useRemoveTagFromContact() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ contactId, tagId }: { contactId: string; tagId: string }) =>
+      api.removeTagFromContact(contactId, tagId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['tags', 'contact', variables.contactId] })
+      queryClient.invalidateQueries({ queryKey: ['tags'] })
+      queryClient.invalidateQueries({ queryKey: ['contacts'] })
+    },
+  })
+}
+
+export function useSuggestTags() {
+  return useMutation({
+    mutationFn: api.suggestTags,
+  })
+}
+
+export function useAutoTagContact() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ contactId, contactData, minConfidence }: {
+      contactId: string
+      contactData: any
+      minConfidence?: number
+    }) => api.autoTagContact(contactId, contactData, minConfidence),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['tags', 'contact', variables.contactId] })
+      queryClient.invalidateQueries({ queryKey: ['tags'] })
+      queryClient.invalidateQueries({ queryKey: ['contacts'] })
+    },
+  })
+}

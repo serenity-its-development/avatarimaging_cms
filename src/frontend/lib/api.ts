@@ -465,3 +465,127 @@ export async function reorderStages(
   )
   return result.data
 }
+
+// =============================================================================
+// TAGS API
+// =============================================================================
+
+export interface Tag {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  color?: string
+  category: string
+  usage_count: number
+  is_ai_generated: boolean
+  ai_reasoning?: string
+  is_active: boolean
+  created_at: number
+  updated_at: number
+}
+
+export interface ContactTag {
+  id: string
+  contact_id: string
+  tag_id: string
+  added_by?: string
+  confidence?: number
+  created_at: number
+  tag?: Tag
+}
+
+export interface CreateTagInput {
+  name: string
+  description?: string
+  color?: string
+  category: string
+}
+
+export interface UpdateTagInput {
+  name?: string
+  description?: string
+  color?: string
+  category?: string
+  is_active?: boolean
+}
+
+export interface AITagSuggestion {
+  tag_name: string
+  slug: string
+  category: string
+  reasoning: string
+  confidence: number
+  color?: string
+}
+
+export async function getTags(category?: string, includeInactive = false): Promise<Tag[]> {
+  const params = new URLSearchParams()
+  if (category) params.set('category', category)
+  if (includeInactive) params.set('include_inactive', 'true')
+
+  const query = params.toString()
+  const result = await apiRequest<{ success: boolean; data: Tag[] }>(`/api/tags${query ? `?${query}` : ''}`)
+  return result.data
+}
+
+export async function getTag(id: string): Promise<Tag> {
+  const result = await apiRequest<{ success: boolean; data: Tag }>(`/api/tags/${id}`)
+  return result.data
+}
+
+export async function createTag(data: CreateTagInput): Promise<Tag> {
+  const result = await apiRequest<{ success: boolean; data: Tag }>('/api/tags', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  return result.data
+}
+
+export async function updateTag(id: string, data: UpdateTagInput): Promise<Tag> {
+  const result = await apiRequest<{ success: boolean; data: Tag }>(`/api/tags/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  return result.data
+}
+
+export async function deleteTag(id: string): Promise<void> {
+  await apiRequest(`/api/tags/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function getContactTags(contactId: string): Promise<ContactTag[]> {
+  const result = await apiRequest<{ success: boolean; data: ContactTag[] }>(`/api/tags/contact/${contactId}`)
+  return result.data
+}
+
+export async function addTagToContact(contactId: string, tagId: string, addedBy?: string): Promise<void> {
+  await apiRequest(`/api/tags/contact/${contactId}`, {
+    method: 'POST',
+    body: JSON.stringify({ tag_id: tagId, added_by: addedBy }),
+  })
+}
+
+export async function removeTagFromContact(contactId: string, tagId: string): Promise<void> {
+  await apiRequest(`/api/tags/contact/${contactId}/${tagId}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function suggestTags(contactData: any): Promise<AITagSuggestion[]> {
+  const result = await apiRequest<{ success: boolean; data: AITagSuggestion[] }>('/api/tags/suggest', {
+    method: 'POST',
+    body: JSON.stringify(contactData),
+  })
+  return result.data
+}
+
+export async function autoTagContact(contactId: string, contactData: any, minConfidence = 0.7): Promise<Tag[]> {
+  const result = await apiRequest<{ success: boolean; data: Tag[] }>(`/api/tags/auto-tag/${contactId}`, {
+    method: 'POST',
+    body: JSON.stringify({ ...contactData, min_confidence: minConfidence }),
+  })
+  return result.data
+}

@@ -12,6 +12,7 @@ import { EmailMarketingService } from '../services/EmailMarketingService'
 import { ReportingService } from '../services/ReportingService'
 import { AutomationService } from '../services/AutomationService'
 import { PipelineService } from '../services/PipelineService'
+import { TagService } from '../services/TagService'
 
 export class Router {
   private services: {
@@ -22,6 +23,7 @@ export class Router {
     reporting: ReportingService
     automation: AutomationService
     pipelines: PipelineService
+    tags: TagService
   }
 
   constructor(
@@ -44,7 +46,8 @@ export class Router {
       emailMarketing: new EmailMarketingService(db, ai, queue),
       reporting: new ReportingService(db, ai, queue),
       automation: new AutomationService(db, queue),
-      pipelines: new PipelineService(db)
+      pipelines: new PipelineService(db),
+      tags: new TagService(db, ai)
     }
   }
 
@@ -98,6 +101,11 @@ export class Router {
       // Pipeline routes
       if (path.startsWith('/api/pipelines')) {
         return await this.handlePipelineRoutes(request, path, method, corsHeaders)
+      }
+
+      // Tag routes
+      if (path.startsWith('/api/tags')) {
+        return await this.handleTagRoutes(request, path, method, corsHeaders)
       }
 
       // Webhook routes
@@ -635,6 +643,127 @@ export class Router {
 
       const stages = await this.services.pipelines.reorderStages(pipelineId, data.stages)
       return this.jsonResponse({ success: true, data: stages }, 200, corsHeaders)
+    }
+
+    return this.jsonResponse({ error: 'Not found' }, 404, corsHeaders)
+  }
+
+  private async handleTagRoutes(
+    request: Request,
+    path: string,
+    method: string,
+    corsHeaders: Record<string, string>
+  ): Promise<Response> {
+    // GET /api/tags - List all tags
+    if (path === '/api/tags' && method === 'GET') {
+      const url = new URL(request.url)
+      const category = url.searchParams.get('category') || undefined
+      const includeInactive = url.searchParams.get('include_inactive') === 'true'
+
+      const tags = await this.services.tags.listAll(category, includeInactive)
+      return this.jsonResponse({ success: true, data: tags }, 200, corsHeaders)
+    }
+
+    // GET /api/tags/:id - Get tag by ID
+    if (path.match(/^\/api\/tags\/[^\/]+$/) && method === 'GET') {
+      const id = path.split('/').pop()!
+      const tag = await this.services.tags.getById(id)
+
+      if (!tag) {
+        return this.jsonResponse({ error: 'Tag not found' }, 404, corsHeaders)
+      }
+
+      return this.jsonResponse({ success: true, data: tag }, 200, corsHeaders)
+    }
+
+    // POST /api/tags - Create new tag
+    if (path === '/api/tags' && method === 'POST') {
+      const data = await request.json()
+
+      if (!data.name || !data.category) {
+        return this.jsonResponse({
+          error: 'Missing required fields: name, category'
+        }, 400, corsHeaders)
+      }
+
+      const tag = await this.services.tags.create(data)
+      return this.jsonResponse({ success: true, data: tag }, 201, corsHeaders)
+    }
+
+    // PUT /api/tags/:id - Update tag
+    if (path.match(/^\/api\/tags\/[^\/]+$/) && method === 'PUT') {
+      const id = path.split('/').pop()!
+      const data = await request.json()
+
+      const tag = await this.services.tags.update(id, data)
+      return this.jsonResponse({ success: true, data: tag }, 200, corsHeaders)
+    }
+
+    // DELETE /api/tags/:id - Delete tag
+    if (path.match(/^\/api\/tags\/[^\/]+$/) && method === 'DELETE') {
+      const id = path.split('/').pop()!
+      await this.services.tags.delete(id)
+      return this.jsonResponse({ success: true, message: 'Tag deleted' }, 200, corsHeaders)
+    }
+
+    // GET /api/tags/contact/:contactId - Get tags for contact
+    if (path.match(/^\/api\/tags\/contact\/[^\/]+$/) && method === 'GET') {
+      const contactId = path.split('/').pop()!
+      const tags = await this.services.tags.getContactTags(contactId)
+      return this.jsonResponse({ success: true, data: tags }, 200, corsHeaders)
+    }
+
+    // POST /api/tags/contact/:contactId - Add tag to contact
+    if (path.match(/^\/api\/tags\/contact\/[^\/]+$/) && method === 'POST') {
+      const contactId = path.split('/').pop()!
+      const data = await request.json()
+
+      if (!data.tag_id) {
+        return this.jsonResponse({
+          error: 'Missing required field: tag_id'
+        }, 400, corsHeaders)
+      }
+
+      await this.services.tags.addTagToContact(
+        contactId,
+        data.tag_id,
+        data.added_by || 'staff',
+        data.confidence
+      )
+
+      return this.jsonResponse({ success: true, message: 'Tag added to contact' }, 200, corsHeaders)
+    }
+
+    // DELETE /api/tags/contact/:contactId/:tagId - Remove tag from contact
+    if (path.match(/^\/api\/tags\/contact\/[^\/]+\/[^\/]+$/) && method === 'DELETE') {
+      const parts = path.split('/')
+      const tagId = parts.pop()!
+      const contactId = parts.pop()!
+
+      await this.services.tags.removeTagFromContact(contactId, tagId)
+      return this.jsonResponse({ success: true, message: 'Tag removed from contact' }, 200, corsHeaders)
+    }
+
+    // POST /api/tags/suggest - AI tag suggestions
+    if (path === '/api/tags/suggest' && method === 'POST') {
+      const data = await request.json()
+
+      const suggestions = await this.services.tags.suggestTags(data)
+      return this.jsonResponse({ success: true, data: suggestions }, 200, corsHeaders)
+    }
+
+    // POST /api/tags/auto-tag/:contactId - Auto-tag contact with AI
+    if (path.match(/^\/api\/tags\/auto-tag\/[^\/]+$/) && method === 'POST') {
+      const contactId = path.split('/').pop()!
+      const data = await request.json()
+
+      const tags = await this.services.tags.autoTagContact(
+        contactId,
+        data,
+        data.min_confidence || 0.7
+      )
+
+      return this.jsonResponse({ success: true, data: tags, message: `Applied ${tags.length} AI-suggested tags` }, 200, corsHeaders)
     }
 
     return this.jsonResponse({ error: 'Not found' }, 404, corsHeaders)
