@@ -103,9 +103,9 @@ export default function Reports() {
   }
 
   const getSourceColor = (conversionRate: number) => {
-    if (conversionRate >= 40) return 'green'
-    if (conversionRate >= 25) return 'yellow'
-    return 'gray'
+    if (conversionRate >= 40) return 'success'
+    if (conversionRate >= 25) return 'warning'
+    return 'default'
   }
 
   if (loadingStats) {
@@ -338,7 +338,7 @@ export default function Reports() {
         <div className="p-6">
           <h3 className="text-lg font-bold mb-4">Lead Source Distribution</h3>
           <div className="grid grid-cols-4 gap-4">
-            {Object.entries(dashboardStats.source_breakdown).map(([source, count]) => (
+            {Object.entries(dashboardStats.source_breakdown || {}).map(([source, count]) => (
               <div key={source} className="text-center p-4 bg-gray-50 rounded-lg">
                 <div className="text-3xl mb-2">{getSourceIcon(source)}</div>
                 <div className="text-2xl font-bold text-gray-900">{count}</div>

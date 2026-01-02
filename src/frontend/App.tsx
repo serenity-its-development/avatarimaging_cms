@@ -9,6 +9,7 @@ import Calendar from './pages/Calendar'
 import Messages from './pages/Messages'
 import Reports from './pages/Reports'
 import AIInsights from './pages/AIInsights'
+import Settings from './pages/Settings'
 import FloatingAICommand from './components/ui/FloatingAICommand'
 import { useAIQuery } from './hooks/useAPI'
 
@@ -52,7 +53,7 @@ function AppContent() {
           <Route path="/messages" element={<Messages />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/ai-insights" element={<AIInsights />} />
-          <Route path="/settings" element={<div className="p-8 text-center text-gray-500">Settings Page (Coming Soon)</div>} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </MainLayout>
 

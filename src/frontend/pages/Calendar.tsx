@@ -23,11 +23,11 @@ export default function Calendar() {
   // Fetch bookings
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ['bookings'],
-    queryFn: getBookings,
+    queryFn: () => getBookings(),
   })
 
-  // Convert bookings to calendar events
-  const events: CalendarEvent[] = bookings.map((booking: any) => ({
+  // Convert bookings to calendar events (ensure bookings is an array)
+  const events: CalendarEvent[] = (Array.isArray(bookings) ? bookings : []).map((booking: any) => ({
     id: booking.id,
     title: `${booking.service_type} - ${booking.contact_name}`,
     contact_name: booking.contact_name,
@@ -92,10 +92,10 @@ export default function Calendar() {
   }
 
   const statusColors = {
-    pending: 'yellow',
-    confirmed: 'blue',
-    completed: 'green',
-    cancelled: 'red',
+    pending: 'warning',
+    confirmed: 'primary',
+    completed: 'success',
+    cancelled: 'danger',
   } as const
 
   if (isLoading) {
