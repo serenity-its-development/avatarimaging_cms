@@ -10,6 +10,7 @@ import Messages from './pages/Messages'
 import Reports from './pages/Reports'
 import AIInsights from './pages/AIInsights'
 import Settings from './pages/Settings'
+import PipelineSettings from './pages/PipelineSettings'
 import FloatingAICommand from './components/ui/FloatingAICommand'
 import { useAIQuery } from './hooks/useAPI'
 
@@ -54,6 +55,7 @@ function AppContent() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/ai-insights" element={<AIInsights />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/pipelines" element={<PipelineSettings />} />
         </Routes>
       </MainLayout>
 
