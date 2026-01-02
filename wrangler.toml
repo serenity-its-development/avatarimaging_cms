@@ -22,7 +22,7 @@ routes = []
 [[d1_databases]]
 binding = "DB"                            # Access in code: env.DB
 database_name = "avatarimaging-crm-db"
-database_id = ""                          # TODO: Fill after running: wrangler d1 create avatarimaging-crm-db
+database_id = "4b4ac289-5da1-4712-bdd8-b1dcff041bab"
 migrations_dir = "migrations"
 
 # =====================================================================
