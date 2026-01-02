@@ -4,6 +4,7 @@ import MainLayout from './components/layout/MainLayout'
 import Dashboard from './pages/Dashboard'
 import Pipeline from './pages/Pipeline'
 import Contacts from './pages/Contacts'
+import Tasks from './pages/Tasks'
 import FloatingAICommand from './components/ui/FloatingAICommand'
 import { useAIQuery } from './hooks/useAPI'
 
@@ -41,7 +42,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/contacts" element={<Contacts />} />
-          <Route path="/tasks" element={<div className="p-8 text-center text-gray-500">Tasks Page (Coming Soon)</div>} />
+          <Route path="/tasks" element={<Tasks />} />
           <Route path="/pipeline" element={<Pipeline />} />
           <Route path="/calendar" element={<div className="p-8 text-center text-gray-500">Calendar Page (Coming Soon)</div>} />
           <Route path="/messages" element={<div className="p-8 text-center text-gray-500">Messages Page (Coming Soon)</div>} />
