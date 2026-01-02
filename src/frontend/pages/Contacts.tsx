@@ -21,7 +21,7 @@ export default function ContactsPage() {
     phone: '',
     email: '',
     source: 'manual',
-    current_pipeline: 'default',
+    current_pipeline: 'lead_to_booking',
     current_stage: 'new_lead',
   })
 
@@ -45,7 +45,7 @@ export default function ContactsPage() {
         phone: '',
         email: '',
         source: 'manual',
-        current_pipeline: 'default',
+        current_pipeline: 'lead_to_booking',
         current_stage: 'new_lead',
       })
       refetch()
