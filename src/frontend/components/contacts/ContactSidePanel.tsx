@@ -1,7 +1,9 @@
-import { X, Phone, Mail, MessageSquare, Sparkles, Calendar, TrendingUp } from 'lucide-react'
+import { X, Phone, Mail, MessageSquare, Sparkles, Calendar, TrendingUp, Tag, Plus, Loader2 } from 'lucide-react'
 import { Contact } from '../../lib/api'
 import { Button, Badge, Avatar } from '../ui'
 import { formatDate, formatRelativeTime } from '../../lib/utils'
+import { useState } from 'react'
+import { useContactTags, useTags, useAddTagToContact, useRemoveTagFromContact, useAutoTagContact } from '../../hooks/useAPI'
 
 interface ContactSidePanelProps {
   contact: Contact
@@ -10,6 +12,70 @@ interface ContactSidePanelProps {
 }
 
 export default function ContactSidePanel({ contact, onClose, onUpdate }: ContactSidePanelProps) {
+  const [showAddTag, setShowAddTag] = useState(false)
+  const [selectedTagId, setSelectedTagId] = useState('')
+
+  // Fetch tags
+  const { data: contactTags, refetch: refetchContactTags } = useContactTags(contact.id)
+  const { data: allTags } = useTags()
+  const addTagToContact = useAddTagToContact()
+  const removeTagFromContact = useRemoveTagFromContact()
+  const autoTagContact = useAutoTagContact()
+
+  // Filter out already applied tags
+  const availableTags = allTags?.filter(
+    tag => !contactTags?.some(ct => ct.tag_id === tag.id)
+  ) || []
+
+  const handleAddTag = async () => {
+    if (!selectedTagId) return
+    try {
+      await addTagToContact.mutateAsync({
+        contactId: contact.id,
+        tagId: selectedTagId,
+        addedBy: 'staff'
+      })
+      setShowAddTag(false)
+      setSelectedTagId('')
+      refetchContactTags()
+    } catch (error) {
+      console.error('Failed to add tag:', error)
+    }
+  }
+
+  const handleRemoveTag = async (tagId: string) => {
+    try {
+      await removeTagFromContact.mutateAsync({
+        contactId: contact.id,
+        tagId
+      })
+      refetchContactTags()
+    } catch (error) {
+      console.error('Failed to remove tag:', error)
+    }
+  }
+
+  const handleAutoTag = async () => {
+    try {
+      await autoTagContact.mutateAsync({
+        contactId: contact.id,
+        contactData: {
+          name: contact.name,
+          phone: contact.phone,
+          email: contact.email,
+          source: contact.source,
+          current_pipeline: contact.current_pipeline,
+          warmness_score: contact.warmness_score,
+          data: contact.data
+        },
+        minConfidence: 0.7
+      })
+      refetchContactTags()
+    } catch (error) {
+      console.error('Failed to auto-tag:', error)
+    }
+  }
+
   const getWarmnessColor = (score?: number) => {
     if (!score) return 'text-gray-600'
     if (score >= 80) return 'text-danger-600'
@@ -138,6 +204,103 @@ export default function ContactSidePanel({ contact, onClose, onUpdate }: Contact
               <span className="text-sm text-gray-600">Stage</span>
               <Badge variant="success" size="sm">{contact.current_stage}</Badge>
             </div>
+          </div>
+        </div>
+
+        {/* Tags Section */}
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Tag className="w-5 h-5 text-gray-600" />
+              <h3 className="font-semibold text-gray-900">Tags</h3>
+            </div>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setShowAddTag(!showAddTag)}
+                className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors"
+                title="Add tag"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleAutoTag}
+                disabled={autoTagContact.isPending}
+                className="p-1.5 hover:bg-ai-50 rounded text-ai-600 hover:text-ai-700 transition-colors disabled:opacity-50"
+                title="AI auto-tag"
+              >
+                {autoTagContact.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Add Tag Dropdown */}
+          {showAddTag && (
+            <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <select
+                value={selectedTagId}
+                onChange={(e) => setSelectedTagId(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm mb-2"
+              >
+                <option value="">Select a tag...</option>
+                {availableTags.map((tag) => (
+                  <option key={tag.id} value={tag.id}>
+                    {tag.name} ({tag.category})
+                  </option>
+                ))}
+              </select>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowAddTag(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1"
+                  onClick={handleAddTag}
+                  disabled={!selectedTagId || addTagToContact.isPending}
+                >
+                  {addTagToContact.isPending ? 'Adding...' : 'Add Tag'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Tags List */}
+          <div className="flex flex-wrap gap-2">
+            {contactTags && contactTags.length > 0 ? (
+              contactTags.map((ct) => (
+                <div
+                  key={ct.id}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border group hover:border-gray-400 transition-colors"
+                  style={{
+                    backgroundColor: ct.tag?.color ? `${ct.tag.color}15` : '#F3F4F6',
+                    borderColor: ct.tag?.color || '#D1D5DB',
+                    color: ct.tag?.color || '#6B7280'
+                  }}
+                >
+                  <span>{ct.tag?.name}</span>
+                  {ct.tag?.is_ai_generated && (
+                    <Sparkles className="w-3 h-3" />
+                  )}
+                  <button
+                    onClick={() => handleRemoveTag(ct.tag_id)}
+                    className="ml-1 opacity-0 group-hover:opacity-100 hover:bg-black/10 rounded-full p-0.5 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">No tags yet. Add tags to categorize this contact.</p>
+            )}
           </div>
         </div>
 

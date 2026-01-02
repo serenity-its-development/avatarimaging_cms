@@ -11,6 +11,7 @@ import Reports from './pages/Reports'
 import AIInsights from './pages/AIInsights'
 import Settings from './pages/Settings'
 import PipelineSettings from './pages/PipelineSettings'
+import TagManagement from './pages/TagManagement'
 import FloatingAICommand from './components/ui/FloatingAICommand'
 import { useAIQuery } from './hooks/useAPI'
 
@@ -56,6 +57,7 @@ function AppContent() {
           <Route path="/ai-insights" element={<AIInsights />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/pipelines" element={<PipelineSettings />} />
+          <Route path="/settings/tags" element={<TagManagement />} />
         </Routes>
       </MainLayout>
 
