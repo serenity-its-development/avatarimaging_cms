@@ -1,124 +1,74 @@
-import { useState } from 'react'
+import { useContacts, useUpdateContact } from '../hooks/useAPI'
 import KanbanBoard, { KanbanColumn, KanbanCard } from '../components/kanban/KanbanBoard'
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui'
+import { Card, CardContent } from '../components/ui'
+import { Loader2 } from 'lucide-react'
+import { Contact } from '../lib/api'
 
 export default function Pipeline() {
-  const [columns, setColumns] = useState<KanbanColumn[]>([
-    {
-      id: 'new_lead',
-      title: 'New Lead',
-      color: 'bg-ai-500',
-      cards: [
-        {
-          id: '1',
-          title: 'John Smith',
-          description: 'Interested in urgent MRI scan',
-          warmness: 87,
-          assignee: 'Admin',
-          priority: 'urgent',
-          dueDate: '5 min',
-          tags: ['Meta Ads', 'MRI'],
-        },
-        {
-          id: '2',
-          title: 'Sarah Lee',
-          description: 'Follow-up from ManyChat',
-          warmness: 72,
-          assignee: 'Admin',
-          priority: 'high',
-          dueDate: '15 min',
-          tags: ['ManyChat'],
-        },
-      ],
-    },
-    {
-      id: 'contacted',
-      title: 'Contacted',
-      color: 'bg-primary-500',
-      cards: [
-        {
-          id: '3',
-          title: 'Mike Chen',
-          description: 'Responded positively to SMS',
-          warmness: 65,
-          assignee: 'Admin',
-          priority: 'medium',
-          dueDate: '1 hour',
-          tags: ['SMS', 'Routine'],
-        },
-      ],
-    },
-    {
-      id: 'qualified',
-      title: 'Qualified',
-      color: 'bg-teal-500',
-      cards: [
-        {
-          id: '4',
-          title: 'Lisa Wong',
-          description: 'Budget confirmed, ready to book',
-          warmness: 91,
-          assignee: 'Admin',
-          priority: 'high',
-          dueDate: 'Today',
-          tags: ['Referral', 'CT Scan'],
-        },
-      ],
-    },
-    {
-      id: 'booked',
-      title: 'Booked',
-      color: 'bg-success-500',
-      cards: [
-        {
-          id: '5',
-          title: 'David Park',
-          description: 'Appointment scheduled for tomorrow',
-          warmness: 85,
-          assignee: 'Admin',
-          dueDate: 'Tomorrow 10 AM',
-          tags: ['Confirmed'],
-        },
-      ],
-    },
-    {
-      id: 'attended',
-      title: 'Attended',
-      color: 'bg-gray-400',
-      cards: [],
-    },
-  ])
+  const { data: contacts, isLoading } = useContacts()
+  const updateContact = useUpdateContact()
 
-  const handleCardMove = (cardId: string, fromColumn: string, toColumn: string) => {
-    console.log(`Move card ${cardId} from ${fromColumn} to ${toColumn}`)
+  // Group contacts by pipeline stage
+  const stages = ['new_lead', 'contacted', 'qualified', 'booked', 'attended']
+  const stageLabels: Record<string, string> = {
+    new_lead: 'New Lead',
+    contacted: 'Contacted',
+    qualified: 'Qualified',
+    booked: 'Booked',
+    attended: 'Attended',
+  }
+  const stageColors: Record<string, string> = {
+    new_lead: 'bg-ai-500',
+    contacted: 'bg-primary-500',
+    qualified: 'bg-teal-500',
+    booked: 'bg-success-500',
+    attended: 'bg-gray-400',
+  }
 
-    // Find and move the card
-    setColumns((prev) => {
-      const newColumns = prev.map((col) => ({ ...col, cards: [...col.cards] }))
+  const columns: KanbanColumn[] = stages.map(stage => ({
+    id: stage,
+    title: stageLabels[stage],
+    color: stageColors[stage],
+    cards: contacts
+      ?.filter(c => c.current_stage === stage)
+      .map(contactToKanbanCard) || [],
+  }))
 
-      const sourceCol = newColumns.find((c) => c.id === fromColumn)
-      const targetCol = newColumns.find((c) => c.id === toColumn)
+  function contactToKanbanCard(contact: Contact): KanbanCard {
+    const daysSinceCreated = Math.floor((Date.now() - contact.created_at) / (1000 * 60 * 60 * 24))
+    return {
+      id: contact.id,
+      title: contact.name,
+      description: contact.phone || contact.email,
+      warmness: contact.warmness_score,
+      assignee: 'Admin',
+      dueDate: `${daysSinceCreated}d in stage`,
+      tags: [contact.source],
+    }
+  }
 
-      if (sourceCol && targetCol) {
-        const cardIndex = sourceCol.cards.findIndex((c) => c.id === cardId)
-        if (cardIndex !== -1) {
-          const [card] = sourceCol.cards.splice(cardIndex, 1)
-          targetCol.cards.push(card)
-        }
-      }
-
-      return newColumns
-    })
+  const handleCardMove = async (cardId: string, fromColumn: string, toColumn: string) => {
+    try {
+      await updateContact.mutateAsync({
+        id: cardId,
+        data: { current_stage: toColumn },
+      })
+    } catch (error) {
+      console.error('Failed to update contact stage:', error)
+    }
   }
 
   const handleCardClick = (card: KanbanCard) => {
     console.log('Clicked card:', card)
-    // TODO: Open side panel with card details
+    // TODO: Open contact detail panel
   }
 
-  const handleAddCard = (columnId: string) => {
-    console.log('Add card to column:', columnId)
-    // TODO: Open add card modal
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+      </div>
+    )
   }
 
   return (
@@ -152,7 +102,6 @@ export default function Pipeline() {
           columns={columns}
           onCardMove={handleCardMove}
           onCardClick={handleCardClick}
-          onAddCard={handleAddCard}
         />
       </div>
     </div>
