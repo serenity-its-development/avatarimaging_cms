@@ -3,10 +3,8 @@
  * Connects to deployed Cloudflare Worker backend
  */
 
-// API Base URL - Update based on environment
-const API_BASE_URL = import.meta.env.PROD
-  ? 'https://avatarimaging_cms.mona-08d.workers.dev'
-  : '/api' // Proxied in dev via Vite
+// API Base URL - Same worker serves frontend + API
+const API_BASE_URL = ''
 
 /**
  * Generic API request handler with error handling

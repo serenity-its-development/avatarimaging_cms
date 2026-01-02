@@ -16,6 +16,10 @@ export interface Env {
   // KV Cache
   CACHE: KVNamespace;
 
+  // Static Content (Workers Sites)
+  __STATIC_CONTENT: KVNamespace;
+  __STATIC_CONTENT_MANIFEST: string;
+
   // Secrets (set via wrangler secret put)
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;

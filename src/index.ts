@@ -7,22 +7,54 @@ import { D1DatabaseGateway } from './gateway/D1DatabaseGateway'
 import { AILayer } from './ai/AILayer'
 import { Router } from './router/Router'
 import type { Env } from './types/env'
+import { getAssetFromKV } from '@cloudflare/kv-asset-handler'
 
 export default {
   /**
-   * Main fetch handler - Routes all HTTP requests
+   * Main fetch handler - Routes all HTTP requests and serves frontend
    */
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     try {
-      // Initialize core dependencies
-      const db = new D1DatabaseGateway(env.DB)
-      const ai = new AILayer(env.AI)
+      const url = new URL(request.url)
 
-      // Create router with dependencies
-      const router = new Router(db, ai, env, ctx)
+      // API/webhook routes - handle via Router
+      if (url.pathname.startsWith('/api') || url.pathname.startsWith('/webhooks') || url.pathname === '/health') {
+        const db = new D1DatabaseGateway(env.DB)
+        const ai = new AILayer(env.AI)
+        const router = new Router(db, ai, env, ctx)
+        return await router.handle(request)
+      }
 
-      // Route request
-      return await router.handle(request)
+      // Static assets - serve from KV
+      try {
+        return await getAssetFromKV(
+          {
+            request,
+            waitUntil: ctx.waitUntil.bind(ctx),
+          } as any,
+          {
+            ASSET_NAMESPACE: env.__STATIC_CONTENT,
+            ASSET_MANIFEST: env.__STATIC_CONTENT_MANIFEST,
+          } as any
+        )
+      } catch (e) {
+        // SPA fallback - serve index.html for all non-API routes
+        const indexRequest = new Request(`${url.origin}/index.html`, request)
+        try {
+          return await getAssetFromKV(
+            {
+              request: indexRequest,
+              waitUntil: ctx.waitUntil.bind(ctx),
+            } as any,
+            {
+              ASSET_NAMESPACE: env.__STATIC_CONTENT,
+              ASSET_MANIFEST: env.__STATIC_CONTENT_MANIFEST,
+            } as any
+          )
+        } catch (err) {
+          return new Response('Not found', { status: 404 })
+        }
+      }
     } catch (error) {
       console.error('Worker error:', error)
       return new Response(JSON.stringify({

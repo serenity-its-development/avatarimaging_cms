@@ -13,7 +13,13 @@ compatibility_flags = ["nodejs_compat"]
 
 # Worker limits (Free tier: 100K requests/day, 10ms CPU time)
 workers_dev = true
-routes = []
+routes = [
+  { pattern = "crm.avatarimaging.com.au/*", zone_name = "avatarimaging.com.au" }
+]
+
+# Serve frontend static assets
+[site]
+bucket = "./dist"
 
 # =====================================================================
 # D1 DATABASE (SQLite at the edge)
