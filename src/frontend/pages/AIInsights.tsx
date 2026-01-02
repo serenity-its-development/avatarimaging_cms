@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { apiRequest, getContacts } from '../lib/api'
 import { Card } from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
@@ -26,11 +27,22 @@ interface WarmContact {
 }
 
 export default function AIInsights() {
+  const navigate = useNavigate()
+
   // Fetch high warmness contacts
   const { data: contacts = [], isLoading } = useQuery({
     queryKey: ['contacts'],
     queryFn: getContacts,
   })
+
+  const handleInsightAction = (action: string) => {
+    // Route to relevant pages based on action
+    if (action.includes('leads')) navigate('/contacts')
+    else if (action.includes('cancellations')) navigate('/calendar')
+    else if (action.includes('report')) navigate('/reports')
+    else if (action.includes('response')) navigate('/messages')
+    else console.log('Action:', action)
+  }
 
   // Filter and sort by warmness
   const warmContacts: WarmContact[] = contacts
@@ -150,7 +162,10 @@ export default function AIInsights() {
                     </div>
                     <p className="text-sm text-gray-600 mb-3">{insight.description}</p>
                     {insight.action && (
-                      <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                      <button
+                        onClick={() => handleInsightAction(insight.action!)}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
                         {insight.action} →
                       </button>
                     )}

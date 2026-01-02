@@ -9,7 +9,10 @@ import { Column } from '../components/ui/DataTable'
 export default function ContactsPage() {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [filterSource, setFilterSource] = useState<string>('all')
+  const [filterStage, setFilterStage] = useState<string>('all')
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastVariant, setToastVariant] = useState<'success' | 'error' | 'info'>('success')
@@ -53,12 +56,17 @@ export default function ContactsPage() {
     }
   }
 
-  // Filter contacts by search query
-  const filteredContacts = contacts?.filter((contact) =>
-    contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contact.phone?.includes(searchQuery)
-  ) || []
+  // Filter contacts by search query and filters
+  const filteredContacts = contacts?.filter((contact) => {
+    const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contact.phone?.includes(searchQuery)
+    const matchesSource = filterSource === 'all' || contact.source === filterSource
+    const matchesStage = filterStage === 'all' || contact.current_stage === filterStage
+    return matchesSearch && matchesSource && matchesStage
+  }) || []
+
+  const activeFiltersCount = (filterSource !== 'all' ? 1 : 0) + (filterStage !== 'all' ? 1 : 0)
 
   // Handle inline editing
   const handleEdit = async (contact: Contact, field: string, value: any) => {
@@ -212,10 +220,96 @@ export default function ContactsPage() {
             className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
-        <Button variant="outline" size="md">
-          <Filter className="w-4 h-4" />
-          Filters
-        </Button>
+        <div className="relative">
+          <Button
+            variant="outline"
+            size="md"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="w-4 h-4" />
+            Filters
+            {activeFiltersCount > 0 && (
+              <span className="ml-2 px-2 py-0.5 bg-primary-500 text-white text-xs rounded-full">
+                {activeFiltersCount}
+              </span>
+            )}
+          </Button>
+
+          {showFilters && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setShowFilters(false)}
+              />
+              <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-20">
+                <h3 className="font-semibold text-gray-900 mb-4">Filter Contacts</h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Source
+                    </label>
+                    <select
+                      value={filterSource}
+                      onChange={(e) => setFilterSource(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                    >
+                      <option value="all">All Sources</option>
+                      <option value="manual">Manual Entry</option>
+                      <option value="website_form">Website Form</option>
+                      <option value="instagram">Instagram</option>
+                      <option value="facebook">Facebook</option>
+                      <option value="sms_inbound">SMS Inbound</option>
+                      <option value="phone_call">Phone Call</option>
+                      <option value="referral">Referral</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Stage
+                    </label>
+                    <select
+                      value={filterStage}
+                      onChange={(e) => setFilterStage(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                    >
+                      <option value="all">All Stages</option>
+                      <option value="new_lead">New Lead</option>
+                      <option value="contacted">Contacted</option>
+                      <option value="qualified">Qualified</option>
+                      <option value="booked">Booked</option>
+                      <option value="completed">Completed</option>
+                      <option value="lost">Lost</option>
+                    </select>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setFilterSource('all')
+                        setFilterStage('all')
+                      }}
+                    >
+                      Clear
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setShowFilters(false)}
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Contacts Table */}
