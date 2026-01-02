@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Plus, Search, Filter, Loader2, X } from 'lucide-react'
-import { useContacts, useUpdateContact, useRecalculateWarmness, useCreateContact } from '../hooks/useAPI'
+import { useContacts, useUpdateContact, useRecalculateWarmness, useCreateContact, usePipelines } from '../hooks/useAPI'
 import { Contact, CreateContactInput } from '../lib/api'
 import { Button, DataTable, Badge, Avatar, Toast } from '../components/ui'
 import ContactSidePanel from '../components/contacts/ContactSidePanel'
@@ -27,9 +27,16 @@ export default function ContactsPage() {
 
   // Fetch contacts from API
   const { data: contacts, isLoading, error, refetch } = useContacts()
+  const { data: pipelines } = usePipelines()
   const updateContact = useUpdateContact()
   const createContact = useCreateContact()
   const recalculateWarmness = useRecalculateWarmness()
+
+  // Get stages for selected pipeline
+  const selectedPipelineStages = useMemo(() => {
+    const pipeline = pipelines?.find(p => p.id === newContact.current_pipeline)
+    return pipeline?.stages?.sort((a, b) => a.display_order - b.display_order) || []
+  }, [pipelines, newContact.current_pipeline])
 
   // Handle create contact
   const handleCreateContact = async (e: React.FormEvent) => {
@@ -439,6 +446,48 @@ export default function ContactsPage() {
                     <option value="sms_inbound">SMS Inbound</option>
                     <option value="phone_call">Phone Call</option>
                     <option value="referral">Referral</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Pipeline
+                  </label>
+                  <select
+                    value={newContact.current_pipeline}
+                    onChange={(e) => {
+                      const pipeline = pipelines?.find(p => p.id === e.target.value)
+                      const firstStage = pipeline?.stages?.[0]
+                      setNewContact({
+                        ...newContact,
+                        current_pipeline: e.target.value,
+                        current_stage: firstStage?.key || 'new_lead'
+                      })
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    {pipelines?.map((pipeline) => (
+                      <option key={pipeline.id} value={pipeline.id}>
+                        {pipeline.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Stage
+                  </label>
+                  <select
+                    value={newContact.current_stage}
+                    onChange={(e) => setNewContact({ ...newContact, current_stage: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    {selectedPipelineStages.map((stage) => (
+                      <option key={stage.id} value={stage.key}>
+                        {stage.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

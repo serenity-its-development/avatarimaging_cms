@@ -239,3 +239,132 @@ export function useSendEmail() {
     mutationFn: api.sendEmail,
   })
 }
+
+// =============================================================================
+// PIPELINES
+// =============================================================================
+
+export function usePipelines(includeInactive = false) {
+  return useQuery({
+    queryKey: ['pipelines', { includeInactive }],
+    queryFn: () => api.getPipelines(includeInactive),
+    staleTime: 60000, // Pipelines don't change often
+  })
+}
+
+export function usePipeline(id: string) {
+  return useQuery({
+    queryKey: ['pipelines', id],
+    queryFn: () => api.getPipeline(id),
+    enabled: !!id,
+  })
+}
+
+export function useDefaultPipeline() {
+  return useQuery({
+    queryKey: ['pipelines', 'default'],
+    queryFn: api.getDefaultPipeline,
+    staleTime: 60000,
+  })
+}
+
+export function useCreatePipeline() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.createPipeline,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pipelines'] })
+    },
+  })
+}
+
+export function useUpdatePipeline() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: api.UpdatePipelineInput }) =>
+      api.updatePipeline(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['pipelines'] })
+      queryClient.invalidateQueries({ queryKey: ['pipelines', variables.id] })
+    },
+  })
+}
+
+export function useDeletePipeline() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.deletePipeline,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pipelines'] })
+    },
+  })
+}
+
+export function useCreateStage() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ pipelineId, data }: {
+      pipelineId: string
+      data: { name: string; key: string; description?: string; color?: string }
+    }) => api.createStage(pipelineId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['pipelines'] })
+      queryClient.invalidateQueries({ queryKey: ['pipelines', variables.pipelineId] })
+    },
+  })
+}
+
+export function useUpdateStage() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      pipelineId,
+      stageId,
+      data
+    }: {
+      pipelineId: string
+      stageId: string
+      data: api.UpdateStageInput
+    }) => api.updateStage(pipelineId, stageId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['pipelines'] })
+      queryClient.invalidateQueries({ queryKey: ['pipelines', variables.pipelineId] })
+    },
+  })
+}
+
+export function useDeleteStage() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ pipelineId, stageId }: { pipelineId: string; stageId: string }) =>
+      api.deleteStage(pipelineId, stageId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['pipelines'] })
+      queryClient.invalidateQueries({ queryKey: ['pipelines', variables.pipelineId] })
+    },
+  })
+}
+
+export function useReorderStages() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      pipelineId,
+      stages
+    }: {
+      pipelineId: string
+      stages: Array<{ stage_id: string; new_order: number }>
+    }) => api.reorderStages(pipelineId, stages),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['pipelines'] })
+      queryClient.invalidateQueries({ queryKey: ['pipelines', variables.pipelineId] })
+    },
+  })
+}

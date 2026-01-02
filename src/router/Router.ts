@@ -11,6 +11,7 @@ import { SMSService } from '../services/SMSService'
 import { EmailMarketingService } from '../services/EmailMarketingService'
 import { ReportingService } from '../services/ReportingService'
 import { AutomationService } from '../services/AutomationService'
+import { PipelineService } from '../services/PipelineService'
 
 export class Router {
   private services: {
@@ -20,6 +21,7 @@ export class Router {
     emailMarketing: EmailMarketingService
     reporting: ReportingService
     automation: AutomationService
+    pipelines: PipelineService
   }
 
   constructor(
@@ -41,7 +43,8 @@ export class Router {
       sms: new SMSService(db, ai, queue),
       emailMarketing: new EmailMarketingService(db, ai, queue),
       reporting: new ReportingService(db, ai, queue),
-      automation: new AutomationService(db, queue)
+      automation: new AutomationService(db, queue),
+      pipelines: new PipelineService(db)
     }
   }
 
@@ -90,6 +93,11 @@ export class Router {
       // Report routes
       if (path.startsWith('/api/reports')) {
         return await this.handleReportRoutes(request, path, method, corsHeaders)
+      }
+
+      // Pipeline routes
+      if (path.startsWith('/api/pipelines')) {
+        return await this.handlePipelineRoutes(request, path, method, corsHeaders)
       }
 
       // Webhook routes
@@ -507,6 +515,126 @@ export class Router {
       }, context)
 
       return this.jsonResponse(result, 200, corsHeaders)
+    }
+
+    return this.jsonResponse({ error: 'Not found' }, 404, corsHeaders)
+  }
+
+  private async handlePipelineRoutes(
+    request: Request,
+    path: string,
+    method: string,
+    corsHeaders: Record<string, string>
+  ): Promise<Response> {
+    // GET /api/pipelines - List all pipelines
+    if (path === '/api/pipelines' && method === 'GET') {
+      const url = new URL(request.url)
+      const includeInactive = url.searchParams.get('include_inactive') === 'true'
+
+      const pipelines = await this.services.pipelines.listAll(includeInactive)
+      return this.jsonResponse({ success: true, data: pipelines }, 200, corsHeaders)
+    }
+
+    // GET /api/pipelines/default - Get default pipeline
+    if (path === '/api/pipelines/default' && method === 'GET') {
+      const pipeline = await this.services.pipelines.getDefault()
+      if (!pipeline) {
+        return this.jsonResponse({ error: 'No default pipeline found' }, 404, corsHeaders)
+      }
+      return this.jsonResponse({ success: true, data: pipeline }, 200, corsHeaders)
+    }
+
+    // GET /api/pipelines/:id - Get pipeline by ID
+    if (path.match(/^\/api\/pipelines\/[^\/]+$/) && method === 'GET') {
+      const id = path.split('/').pop()!
+      if (id === 'default') {
+        // Already handled above
+        return this.jsonResponse({ error: 'Invalid route' }, 400, corsHeaders)
+      }
+
+      const pipeline = await this.services.pipelines.getById(id)
+      if (!pipeline) {
+        return this.jsonResponse({ error: 'Pipeline not found' }, 404, corsHeaders)
+      }
+      return this.jsonResponse({ success: true, data: pipeline }, 200, corsHeaders)
+    }
+
+    // POST /api/pipelines - Create new pipeline
+    if (path === '/api/pipelines' && method === 'POST') {
+      const data = await request.json()
+
+      if (!data.name || !data.stages || !Array.isArray(data.stages)) {
+        return this.jsonResponse({
+          error: 'Missing required fields: name, stages (array)'
+        }, 400, corsHeaders)
+      }
+
+      const pipeline = await this.services.pipelines.create(data)
+      return this.jsonResponse({ success: true, data: pipeline }, 201, corsHeaders)
+    }
+
+    // PUT /api/pipelines/:id - Update pipeline
+    if (path.match(/^\/api\/pipelines\/[^\/]+$/) && method === 'PUT') {
+      const id = path.split('/').pop()!
+      const data = await request.json()
+
+      const pipeline = await this.services.pipelines.update(id, data)
+      return this.jsonResponse({ success: true, data: pipeline }, 200, corsHeaders)
+    }
+
+    // DELETE /api/pipelines/:id - Delete pipeline (soft delete)
+    if (path.match(/^\/api\/pipelines\/[^\/]+$/) && method === 'DELETE') {
+      const id = path.split('/').pop()!
+
+      await this.services.pipelines.delete(id)
+      return this.jsonResponse({ success: true, message: 'Pipeline deleted' }, 200, corsHeaders)
+    }
+
+    // POST /api/pipelines/:id/stages - Create new stage
+    if (path.match(/^\/api\/pipelines\/[^\/]+\/stages$/) && method === 'POST') {
+      const pipelineId = path.split('/')[3]
+      const data = await request.json()
+
+      if (!data.name || !data.key) {
+        return this.jsonResponse({
+          error: 'Missing required fields: name, key'
+        }, 400, corsHeaders)
+      }
+
+      const stage = await this.services.pipelines.createStage(pipelineId, data)
+      return this.jsonResponse({ success: true, data: stage }, 201, corsHeaders)
+    }
+
+    // PUT /api/pipelines/:pipelineId/stages/:stageId - Update stage
+    if (path.match(/^\/api\/pipelines\/[^\/]+\/stages\/[^\/]+$/) && method === 'PUT') {
+      const stageId = path.split('/').pop()!
+      const data = await request.json()
+
+      const stage = await this.services.pipelines.updateStage(stageId, data)
+      return this.jsonResponse({ success: true, data: stage }, 200, corsHeaders)
+    }
+
+    // DELETE /api/pipelines/:pipelineId/stages/:stageId - Delete stage
+    if (path.match(/^\/api\/pipelines\/[^\/]+\/stages\/[^\/]+$/) && method === 'DELETE') {
+      const stageId = path.split('/').pop()!
+
+      await this.services.pipelines.deleteStage(stageId)
+      return this.jsonResponse({ success: true, message: 'Stage deleted' }, 200, corsHeaders)
+    }
+
+    // POST /api/pipelines/:id/reorder - Reorder stages
+    if (path.match(/^\/api\/pipelines\/[^\/]+\/reorder$/) && method === 'POST') {
+      const pipelineId = path.split('/')[3]
+      const data = await request.json()
+
+      if (!Array.isArray(data.stages)) {
+        return this.jsonResponse({
+          error: 'Missing required field: stages (array of {stage_id, new_order})'
+        }, 400, corsHeaders)
+      }
+
+      const stages = await this.services.pipelines.reorderStages(pipelineId, data.stages)
+      return this.jsonResponse({ success: true, data: stages }, 200, corsHeaders)
     }
 
     return this.jsonResponse({ error: 'Not found' }, 404, corsHeaders)

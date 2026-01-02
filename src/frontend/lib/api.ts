@@ -318,3 +318,150 @@ export async function sendEmail(data: {
     body: JSON.stringify(data),
   })
 }
+
+// =============================================================================
+// PIPELINES API
+// =============================================================================
+
+export interface PipelineStage {
+  id: string
+  pipeline_id: string
+  name: string
+  key: string
+  description?: string
+  color?: string
+  display_order: number
+  is_active: boolean
+  created_at: number
+  updated_at: number
+}
+
+export interface Pipeline {
+  id: string
+  name: string
+  description?: string
+  color?: string
+  is_active: boolean
+  is_default: boolean
+  display_order: number
+  created_at: number
+  updated_at: number
+  stages?: PipelineStage[]
+}
+
+export interface CreatePipelineInput {
+  name: string
+  description?: string
+  color?: string
+  stages: Array<{
+    name: string
+    key: string
+    description?: string
+    color?: string
+  }>
+}
+
+export interface UpdatePipelineInput {
+  name?: string
+  description?: string
+  color?: string
+  is_active?: boolean
+  is_default?: boolean
+  display_order?: number
+}
+
+export interface UpdateStageInput {
+  name?: string
+  key?: string
+  description?: string
+  color?: string
+  display_order?: number
+  is_active?: boolean
+}
+
+export async function getPipelines(includeInactive = false): Promise<Pipeline[]> {
+  const query = includeInactive ? '?include_inactive=true' : ''
+  const result = await apiRequest<{ success: boolean; data: Pipeline[] }>(`/api/pipelines${query}`)
+  return result.data
+}
+
+export async function getPipeline(id: string): Promise<Pipeline> {
+  const result = await apiRequest<{ success: boolean; data: Pipeline }>(`/api/pipelines/${id}`)
+  return result.data
+}
+
+export async function getDefaultPipeline(): Promise<Pipeline> {
+  const result = await apiRequest<{ success: boolean; data: Pipeline }>('/api/pipelines/default')
+  return result.data
+}
+
+export async function createPipeline(data: CreatePipelineInput): Promise<Pipeline> {
+  const result = await apiRequest<{ success: boolean; data: Pipeline }>('/api/pipelines', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  return result.data
+}
+
+export async function updatePipeline(id: string, data: UpdatePipelineInput): Promise<Pipeline> {
+  const result = await apiRequest<{ success: boolean; data: Pipeline }>(`/api/pipelines/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  return result.data
+}
+
+export async function deletePipeline(id: string): Promise<void> {
+  await apiRequest(`/api/pipelines/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function createStage(
+  pipelineId: string,
+  data: { name: string; key: string; description?: string; color?: string }
+): Promise<PipelineStage> {
+  const result = await apiRequest<{ success: boolean; data: PipelineStage }>(
+    `/api/pipelines/${pipelineId}/stages`,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }
+  )
+  return result.data
+}
+
+export async function updateStage(
+  pipelineId: string,
+  stageId: string,
+  data: UpdateStageInput
+): Promise<PipelineStage> {
+  const result = await apiRequest<{ success: boolean; data: PipelineStage }>(
+    `/api/pipelines/${pipelineId}/stages/${stageId}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }
+  )
+  return result.data
+}
+
+export async function deleteStage(pipelineId: string, stageId: string): Promise<void> {
+  await apiRequest(`/api/pipelines/${pipelineId}/stages/${stageId}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function reorderStages(
+  pipelineId: string,
+  stages: Array<{ stage_id: string; new_order: number }>
+): Promise<PipelineStage[]> {
+  const result = await apiRequest<{ success: boolean; data: PipelineStage[] }>(
+    `/api/pipelines/${pipelineId}/reorder`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ stages }),
+    }
+  )
+  return result.data
+}
