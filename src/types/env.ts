@@ -16,9 +16,8 @@ export interface Env {
   // KV Cache
   CACHE: KVNamespace;
 
-  // Static Content (Workers Sites)
-  __STATIC_CONTENT: KVNamespace;
-  __STATIC_CONTENT_MANIFEST: string;
+  // Static Assets (Modern approach - 2025)
+  ASSETS: Fetcher;
 
   // Secrets (set via wrangler secret put)
   GOOGLE_CLIENT_ID: string;
@@ -192,4 +191,11 @@ export interface KVListResult {
   keys: { name: string; expiration?: number; metadata?: any }[];
   list_complete: boolean;
   cursor?: string;
+}
+
+/**
+ * Cloudflare Fetcher interface for Assets binding
+ */
+export interface Fetcher {
+  fetch(request: Request | string): Promise<Response>;
 }

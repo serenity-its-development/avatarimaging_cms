@@ -7,7 +7,6 @@ import { D1DatabaseGateway } from './gateway/D1DatabaseGateway'
 import { AILayer } from './ai/AILayer'
 import { Router } from './router/Router'
 import type { Env } from './types/env'
-import { getAssetFromKV } from '@cloudflare/kv-asset-handler'
 
 export default {
   /**
@@ -25,36 +24,8 @@ export default {
         return await router.handle(request)
       }
 
-      // Static assets - serve from KV
-      try {
-        return await getAssetFromKV(
-          {
-            request,
-            waitUntil: ctx.waitUntil.bind(ctx),
-          } as any,
-          {
-            ASSET_NAMESPACE: env.__STATIC_CONTENT,
-            ASSET_MANIFEST: env.__STATIC_CONTENT_MANIFEST,
-          } as any
-        )
-      } catch (e) {
-        // SPA fallback - serve index.html for all non-API routes
-        const indexRequest = new Request(`${url.origin}/index.html`, request)
-        try {
-          return await getAssetFromKV(
-            {
-              request: indexRequest,
-              waitUntil: ctx.waitUntil.bind(ctx),
-            } as any,
-            {
-              ASSET_NAMESPACE: env.__STATIC_CONTENT,
-              ASSET_MANIFEST: env.__STATIC_CONTENT_MANIFEST,
-            } as any
-          )
-        } catch (err) {
-          return new Response('Not found', { status: 404 })
-        }
-      }
+      // Static assets - serve from Assets binding (Modern approach)
+      return await env.ASSETS.fetch(request)
     } catch (error) {
       console.error('Worker error:', error)
       return new Response(JSON.stringify({

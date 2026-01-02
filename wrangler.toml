@@ -17,9 +17,10 @@ routes = [
   { pattern = "crm.avatarimaging.com.au/*", zone_name = "avatarimaging.com.au" }
 ]
 
-# Serve frontend static assets
-[site]
-bucket = "./dist"
+# Serve frontend static assets (Modern approach - 2025)
+[assets]
+directory = "./dist"
+binding = "ASSETS"
 
 # =====================================================================
 # D1 DATABASE (SQLite at the edge)
