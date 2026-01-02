@@ -1,0 +1,42 @@
+## Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Wrangler
+.wrangler/
+.dev.vars
+*.sqlite
+*.db
+
+# Logs
+logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+.cache/
+
+# Temp
+tmp/
+temp/

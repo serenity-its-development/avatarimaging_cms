@@ -27,23 +27,24 @@
     "tail:prod": "wrangler tail --env=production"
   },
   "dependencies": {
-    "hono": "^4.6.15",
     "@hono/zod-validator": "^0.4.1",
-    "zod": "^3.24.1",
-    "ulid": "^2.3.0",
+    "@tanstack/react-query": "^5.62.8",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "hono": "^4.6.15",
+    "lucide-react": "^0.469.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
-    "@tanstack/react-query": "^5.62.8",
-    "date-fns": "^4.1.0",
-    "clsx": "^2.1.1",
-    "lucide-react": "^0.469.0"
+    "ulid": "^2.3.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "better-sqlite3": "^12.5.0",
     "concurrently": "^9.1.2",
     "eslint": "^9.18.0",
     "postcss": "^8.4.49",

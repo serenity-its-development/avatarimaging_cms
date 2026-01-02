@@ -7,11 +7,8 @@ export interface Env {
   // D1 Database
   DB: D1Database;
 
-  // Queues
-  AUTOMATION_QUEUE: Queue;
-  SMS_QUEUE: Queue;
-  AUTOMATION_DLQ: Queue;
-  SMS_DLQ: Queue;
+  // Unified Queue
+  QUEUE: Queue;
 
   // Workers AI
   AI: Ai;

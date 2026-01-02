@@ -29,38 +29,16 @@ migrations_dir = "migrations"
 # QUEUES (Async job processing)
 # =====================================================================
 
-# Automation Queue: Process automation rules and pipeline movements
+# Unified Queue: All async processing (automation, SMS, email)
 [[queues.producers]]
-queue = "automation-queue"
-binding = "AUTOMATION_QUEUE"              # Access in code: env.AUTOMATION_QUEUE
+queue = "avatar-queue"
+binding = "QUEUE"              # Access in code: env.QUEUE
 
 [[queues.consumers]]
-queue = "automation-queue"
+queue = "avatar-queue"
 max_batch_size = 10
 max_batch_timeout = 30
 max_retries = 3
-dead_letter_queue = "automation-dlq"
-
-# SMS Queue: Send outbound SMS messages
-[[queues.producers]]
-queue = "sms-queue"
-binding = "SMS_QUEUE"                     # Access in code: env.SMS_QUEUE
-
-[[queues.consumers]]
-queue = "sms-queue"
-max_batch_size = 100                      # Batch SMS for cost efficiency
-max_batch_timeout = 10
-max_retries = 3
-dead_letter_queue = "sms-dlq"
-
-# Dead Letter Queues (manual inspection of failures)
-[[queues.producers]]
-queue = "automation-dlq"
-binding = "AUTOMATION_DLQ"
-
-[[queues.producers]]
-queue = "sms-dlq"
-binding = "SMS_DLQ"
 
 # =====================================================================
 # WORKERS AI (Edge inference)
@@ -74,10 +52,11 @@ binding = "AI"                            # Access in code: env.AI
 # =====================================================================
 
 # Cache for warmness scores and AI results (optional optimization)
-[[kv_namespaces]]
-binding = "CACHE"
-id = ""                                   # TODO: Fill after creating KV namespace
-preview_id = ""
+# Uncomment after creating KV namespace
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "YOUR_KV_ID_HERE"
+# preview_id = "YOUR_PREVIEW_KV_ID_HERE"
 
 # =====================================================================
 # SECRETS (Set via: wrangler secret put SECRET_NAME)
@@ -134,24 +113,16 @@ SPEED_TO_LEAD_TARGET_MINUTES = 5          # Target: respond within 5 minutes
 # =====================================================================
 
 [[triggers.crons]]
-cron = "0 9 * * *"                        # 9:00 AM daily (AEST)
-name = "send-daily-reminders"
+cron = "0 */3 * * *"                      # Every 3 hours - Booking reminders
+name = "booking-reminders"
 
 [[triggers.crons]]
-cron = "0 7 * * *"                        # 7:00 AM daily
-name = "send-2hr-reminders"
+cron = "0 2 * * *"                        # Daily at 2am - Warmness recalculation
+name = "warmness-recalculation"
 
 [[triggers.crons]]
-cron = "0 0 * * 0"                        # Midnight every Sunday
-name = "process-weekly-recalls"
-
-[[triggers.crons]]
-cron = "*/15 * * * *"                     # Every 15 minutes
-name = "recalculate-warmness-scores"
-
-[[triggers.crons]]
-cron = "0 8 * * 1"                        # 8:00 AM every Monday
-name = "generate-weekly-reports"
+cron = "0 8 * * 1"                        # Weekly Monday 8am - Scheduled reports
+name = "scheduled-reports"
 
 # =====================================================================
 # OBSERVABILITY
@@ -185,10 +156,9 @@ routes = [
   { pattern = "crm.avatarimaging.com.au/*", zone_name = "avatarimaging.com.au" }
 ]
 
-vars = {
-  ENVIRONMENT = "production",
-  FRONTEND_URL = "https://crm.avatarimaging.com.au"
-}
+[env.production.vars]
+ENVIRONMENT = "production"
+FRONTEND_URL = "https://crm.avatarimaging.com.au"
 
 [env.production.d1_databases]
 binding = "DB"
@@ -199,16 +169,4 @@ database_id = ""                          # Production D1 database
 # BUILD CONFIGURATION
 # =====================================================================
 
-[build]
-command = "npm run build"
-
-[build.upload]
-format = "service-worker"
-
-# =====================================================================
-# MINIFLARE (Local development)
-# =====================================================================
-
-[miniflare]
-kv_persist = true
-d1_persist = true
+# Build configuration handled by wrangler automatically
