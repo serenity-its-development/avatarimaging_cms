@@ -1,19 +1,41 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import MainLayout from './components/layout/MainLayout'
 import Dashboard from './pages/Dashboard'
 import Pipeline from './pages/Pipeline'
 import FloatingAICommand from './components/ui/FloatingAICommand'
+import { useAIQuery } from './hooks/useAPI'
 
-function App() {
+// Create React Query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 30000, // 30 seconds
+    },
+  },
+})
+
+function AppContent() {
+  const aiQueryMutation = useAIQuery()
+
   const handleAISubmit = async (message: string) => {
-    console.log('AI Command:', message)
-    // TODO: Integrate with AI endpoint
-    // This will send the message to the backend API for processing
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      const result = await aiQueryMutation.mutateAsync({
+        message,
+        context: {},
+      })
+      console.log('AI Response:', result)
+      return result
+    } catch (error) {
+      console.error('AI Query failed:', error)
+      throw error
+    }
   }
 
   return (
-    <Router>
+    <>
       <MainLayout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
@@ -30,7 +52,17 @@ function App() {
 
       {/* Floating AI Command Palette */}
       <FloatingAICommand onSubmit={handleAISubmit} />
-    </Router>
+    </>
+  )
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <AppContent />
+      </Router>
+    </QueryClientProvider>
   )
 }
 
