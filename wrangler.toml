@@ -1,0 +1,214 @@
+# Avatar Imaging CRM - Cloudflare Workers Configuration
+# Platform: Cloudflare Workers + D1 + Queues + Workers AI
+# Version: 1.0.0
+
+name = "avatarimaging-crm"
+main = "src/index.ts"
+compatibility_date = "2025-01-02"
+compatibility_flags = ["nodejs_compat"]
+
+# =====================================================================
+# WORKER CONFIGURATION
+# =====================================================================
+
+# Worker limits (Free tier: 100K requests/day, 10ms CPU time)
+workers_dev = true
+routes = []
+
+# =====================================================================
+# D1 DATABASE (SQLite at the edge)
+# =====================================================================
+
+[[d1_databases]]
+binding = "DB"                            # Access in code: env.DB
+database_name = "avatarimaging-crm-db"
+database_id = ""                          # TODO: Fill after running: wrangler d1 create avatarimaging-crm-db
+migrations_dir = "migrations"
+
+# =====================================================================
+# QUEUES (Async job processing)
+# =====================================================================
+
+# Automation Queue: Process automation rules and pipeline movements
+[[queues.producers]]
+queue = "automation-queue"
+binding = "AUTOMATION_QUEUE"              # Access in code: env.AUTOMATION_QUEUE
+
+[[queues.consumers]]
+queue = "automation-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "automation-dlq"
+
+# SMS Queue: Send outbound SMS messages
+[[queues.producers]]
+queue = "sms-queue"
+binding = "SMS_QUEUE"                     # Access in code: env.SMS_QUEUE
+
+[[queues.consumers]]
+queue = "sms-queue"
+max_batch_size = 100                      # Batch SMS for cost efficiency
+max_batch_timeout = 10
+max_retries = 3
+dead_letter_queue = "sms-dlq"
+
+# Dead Letter Queues (manual inspection of failures)
+[[queues.producers]]
+queue = "automation-dlq"
+binding = "AUTOMATION_DLQ"
+
+[[queues.producers]]
+queue = "sms-dlq"
+binding = "SMS_DLQ"
+
+# =====================================================================
+# WORKERS AI (Edge inference)
+# =====================================================================
+
+[ai]
+binding = "AI"                            # Access in code: env.AI
+
+# =====================================================================
+# KV NAMESPACES (Optional caching)
+# =====================================================================
+
+# Cache for warmness scores and AI results (optional optimization)
+[[kv_namespaces]]
+binding = "CACHE"
+id = ""                                   # TODO: Fill after creating KV namespace
+preview_id = ""
+
+# =====================================================================
+# SECRETS (Set via: wrangler secret put SECRET_NAME)
+# =====================================================================
+
+# Required secrets (not committed to git):
+# - GOOGLE_CLIENT_ID              # Google OAuth
+# - GOOGLE_CLIENT_SECRET          # Google OAuth
+# - SESSION_SECRET                # JWT signing key
+# - WIX_WEBHOOK_SECRET            # Wix webhook verification
+# - MANYCHAT_WEBHOOK_SECRET       # ManyChat webhook verification
+# - CLICKSEND_API_KEY             # ClickSend SMS provider
+# - CLICKSEND_USERNAME            # ClickSend username
+# - SMS_WEBHOOK_SECRET            # SMS inbound webhook verification
+
+# =====================================================================
+# ENVIRONMENT VARIABLES
+# =====================================================================
+
+[vars]
+# Application
+APP_NAME = "Avatar Imaging CRM"
+APP_VERSION = "1.0.0"
+ENVIRONMENT = "development"
+
+# Frontend URL (CORS)
+FRONTEND_URL = "http://localhost:5173"    # Update after Cloudflare Pages deployment
+
+# SMS Provider
+SMS_PROVIDER = "clicksend"                # clicksend | messagemedia
+SMS_FROM_NUMBER = "+61400000000"          # TODO: Update with actual number
+
+# Wix Integration
+WIX_SITE_ID = ""                          # TODO: Update with Wix site ID
+WIX_BOOKING_CALENDAR_ID = ""              # TODO: Update with calendar ID
+
+# ManyChat Integration
+MANYCHAT_PAGE_ID = ""                     # TODO: Update with ManyChat page ID
+
+# Google OAuth
+GOOGLE_OAUTH_REDIRECT_URI = "https://avatarimaging-crm.workers.dev/auth/google/callback"
+
+# AI Configuration
+AI_MODEL_WARMNESS = "@cf/meta/llama-3.1-8b-instruct"
+AI_MODEL_INTENT = "@cf/meta/llama-3.2-1b-instruct"
+AI_MAX_TOKENS = 256
+
+# Business Rules
+WARMNESS_RECALC_INTERVAL_HOURS = 24       # Recalculate warmness every 24 hours
+SPEED_TO_LEAD_TARGET_MINUTES = 5          # Target: respond within 5 minutes
+
+# =====================================================================
+# CRON TRIGGERS (Scheduled tasks)
+# =====================================================================
+
+[[triggers.crons]]
+cron = "0 9 * * *"                        # 9:00 AM daily (AEST)
+name = "send-daily-reminders"
+
+[[triggers.crons]]
+cron = "0 7 * * *"                        # 7:00 AM daily
+name = "send-2hr-reminders"
+
+[[triggers.crons]]
+cron = "0 0 * * 0"                        # Midnight every Sunday
+name = "process-weekly-recalls"
+
+[[triggers.crons]]
+cron = "*/15 * * * *"                     # Every 15 minutes
+name = "recalculate-warmness-scores"
+
+[[triggers.crons]]
+cron = "0 8 * * 1"                        # 8:00 AM every Monday
+name = "generate-weekly-reports"
+
+# =====================================================================
+# OBSERVABILITY
+# =====================================================================
+
+[observability]
+enabled = true
+head_sampling_rate = 1.0                  # Sample 100% during development
+
+# =====================================================================
+# DEVELOPMENT CONFIGURATION
+# =====================================================================
+
+[env.development]
+name = "avatarimaging-crm-dev"
+vars = { ENVIRONMENT = "development" }
+
+[env.development.d1_databases]
+binding = "DB"
+database_name = "avatarimaging-crm-db-dev"
+database_id = ""                          # Local D1 for development
+
+# =====================================================================
+# PRODUCTION CONFIGURATION
+# =====================================================================
+
+[env.production]
+name = "avatarimaging-crm"
+workers_dev = false
+routes = [
+  { pattern = "crm.avatarimaging.com.au/*", zone_name = "avatarimaging.com.au" }
+]
+
+vars = {
+  ENVIRONMENT = "production",
+  FRONTEND_URL = "https://crm.avatarimaging.com.au"
+}
+
+[env.production.d1_databases]
+binding = "DB"
+database_name = "avatarimaging-crm-db-prod"
+database_id = ""                          # Production D1 database
+
+# =====================================================================
+# BUILD CONFIGURATION
+# =====================================================================
+
+[build]
+command = "npm run build"
+
+[build.upload]
+format = "service-worker"
+
+# =====================================================================
+# MINIFLARE (Local development)
+# =====================================================================
+
+[miniflare]
+kv_persist = true
+d1_persist = true
