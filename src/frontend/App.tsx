@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import MainLayout from './components/layout/MainLayout'
 import Dashboard from './pages/Dashboard'
 import Pipeline from './pages/Pipeline'
+import Contacts from './pages/Contacts'
 import FloatingAICommand from './components/ui/FloatingAICommand'
 import { useAIQuery } from './hooks/useAPI'
 
@@ -39,7 +40,7 @@ function AppContent() {
       <MainLayout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/contacts" element={<div className="p-8 text-center text-gray-500">Contacts Page (Coming Soon)</div>} />
+          <Route path="/contacts" element={<Contacts />} />
           <Route path="/tasks" element={<div className="p-8 text-center text-gray-500">Tasks Page (Coming Soon)</div>} />
           <Route path="/pipeline" element={<Pipeline />} />
           <Route path="/calendar" element={<div className="p-8 text-center text-gray-500">Calendar Page (Coming Soon)</div>} />
