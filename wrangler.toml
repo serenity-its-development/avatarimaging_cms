@@ -2,7 +2,7 @@
 # Platform: Cloudflare Workers + D1 + Queues + Workers AI
 # Version: 1.0.0
 
-name = "avatarimaging-crm"
+name = "avatarimaging_cms"
 main = "src/index.ts"
 compatibility_date = "2025-01-02"
 compatibility_flags = ["nodejs_compat"]
@@ -111,18 +111,20 @@ SPEED_TO_LEAD_TARGET_MINUTES = 5          # Target: respond within 5 minutes
 # =====================================================================
 # CRON TRIGGERS (Scheduled tasks)
 # =====================================================================
+# Note: Cron triggers temporarily disabled for initial deployment
+# Re-enable after worker is deployed successfully
 
-[[triggers.crons]]
-cron = "0 */3 * * *"                      # Every 3 hours - Booking reminders
-name = "booking-reminders"
+# [[triggers.crons]]
+# cron = "0 */3 * * *"                      # Every 3 hours - Booking reminders
+# name = "booking-reminders"
 
-[[triggers.crons]]
-cron = "0 2 * * *"                        # Daily at 2am - Warmness recalculation
-name = "warmness-recalculation"
+# [[triggers.crons]]
+# cron = "0 2 * * *"                        # Daily at 2am - Warmness recalculation
+# name = "warmness-recalculation"
 
-[[triggers.crons]]
-cron = "0 8 * * 1"                        # Weekly Monday 8am - Scheduled reports
-name = "scheduled-reports"
+# [[triggers.crons]]
+# cron = "0 8 * * 1"                        # Weekly Monday 8am - Scheduled reports
+# name = "scheduled-reports"
 
 # =====================================================================
 # OBSERVABILITY
@@ -150,7 +152,7 @@ database_id = ""                          # Local D1 for development
 # =====================================================================
 
 [env.production]
-name = "avatarimaging-crm"
+name = "avatarimaging_cms"
 workers_dev = false
 routes = [
   { pattern = "crm.avatarimaging.com.au/*", zone_name = "avatarimaging.com.au" }
