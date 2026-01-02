@@ -1,22 +1,57 @@
 import { useState } from 'react'
-import { Plus, Search, Filter, Loader2 } from 'lucide-react'
-import { useContacts, useUpdateContact, useRecalculateWarmness } from '../hooks/useAPI'
-import { Contact } from '../lib/api'
+import { Plus, Search, Filter, Loader2, X } from 'lucide-react'
+import { useContacts, useUpdateContact, useRecalculateWarmness, useCreateContact } from '../hooks/useAPI'
+import { Contact, CreateContactInput } from '../lib/api'
 import { Button, DataTable, Badge, Avatar, Toast } from '../components/ui'
 import ContactSidePanel from '../components/contacts/ContactSidePanel'
 import { Column } from '../components/ui/DataTable'
 
 export default function ContactsPage() {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastVariant, setToastVariant] = useState<'success' | 'error' | 'info'>('success')
+  const [newContact, setNewContact] = useState<CreateContactInput>({
+    name: '',
+    phone: '',
+    email: '',
+    source: 'manual',
+    current_pipeline: 'default',
+    current_stage: 'new_lead',
+  })
 
   // Fetch contacts from API
   const { data: contacts, isLoading, error, refetch } = useContacts()
   const updateContact = useUpdateContact()
+  const createContact = useCreateContact()
   const recalculateWarmness = useRecalculateWarmness()
+
+  // Handle create contact
+  const handleCreateContact = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      await createContact.mutateAsync(newContact)
+      setToastMessage('Contact created successfully')
+      setToastVariant('success')
+      setShowToast(true)
+      setShowCreateModal(false)
+      setNewContact({
+        name: '',
+        phone: '',
+        email: '',
+        source: 'manual',
+        current_pipeline: 'default',
+        current_stage: 'new_lead',
+      })
+      refetch()
+    } catch (error) {
+      setToastMessage('Failed to create contact')
+      setToastVariant('error')
+      setShowToast(true)
+    }
+  }
 
   // Filter contacts by search query
   const filteredContacts = contacts?.filter((contact) =>
@@ -159,7 +194,7 @@ export default function ContactsPage() {
             {contacts && ` (${contacts.length} total)`}
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="w-4 h-4" />
           New Contact
         </Button>
@@ -199,7 +234,7 @@ export default function ContactsPage() {
               {searchQuery ? 'Try a different search query' : 'Get started by creating your first contact'}
             </p>
             {!searchQuery && (
-              <Button>
+              <Button onClick={() => setShowCreateModal(true)}>
                 <Plus className="w-4 h-4" />
                 Create Contact
               </Button>
@@ -231,6 +266,115 @@ export default function ContactsPage() {
             onClose={() => setSelectedContact(null)}
             onUpdate={(data) => handleEdit(selectedContact, Object.keys(data)[0], Object.values(data)[0])}
           />
+        </>
+      )}
+
+      {/* Create Contact Modal */}
+      {showCreateModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            onClick={() => setShowCreateModal(false)}
+          />
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Create New Contact</h2>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateContact} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newContact.name}
+                    onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="John Smith"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={newContact.phone}
+                    onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="+61 400 000 000"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={newContact.email}
+                    onChange={(e) => setNewContact({ ...newContact, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="john@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Source
+                  </label>
+                  <select
+                    value={newContact.source}
+                    onChange={(e) => setNewContact({ ...newContact, source: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="manual">Manual Entry</option>
+                    <option value="website_form">Website Form</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="sms_inbound">SMS Inbound</option>
+                    <option value="phone_call">Phone Call</option>
+                    <option value="referral">Referral</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowCreateModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={createContact.isPending}
+                  >
+                    {createContact.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      'Create Contact'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
         </>
       )}
 
