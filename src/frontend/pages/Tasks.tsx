@@ -1,15 +1,42 @@
 import { useState } from 'react'
-import { Plus, List, LayoutGrid, Clock, AlertCircle } from 'lucide-react'
+import { Plus, List, LayoutGrid, Clock, AlertCircle, X } from 'lucide-react'
 import { useTasks, useUpdateTask, useCreateTask } from '../hooks/useAPI'
-import { Task } from '../lib/api'
+import { Task, CreateTaskInput } from '../lib/api'
 import { Button, Badge, Avatar, Card, CardContent } from '../components/ui'
 import KanbanBoard, { KanbanColumn, KanbanCard } from '../components/kanban/KanbanBoard'
 import { formatRelativeTime, getPriorityColorClass } from '../lib/utils'
 
 export default function TasksPage() {
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list')
-  const { data: tasks, isLoading } = useTasks()
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const { data: tasks, isLoading, refetch } = useTasks()
   const updateTask = useUpdateTask()
+  const createTask = useCreateTask()
+  const [newTask, setNewTask] = useState<CreateTaskInput>({
+    contact_id: '',
+    type: 'follow_up',
+    title: '',
+    description: '',
+    priority: 'medium',
+  })
+
+  const handleCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      await createTask.mutateAsync(newTask)
+      setShowCreateModal(false)
+      setNewTask({
+        contact_id: '',
+        type: 'follow_up',
+        title: '',
+        description: '',
+        priority: 'medium',
+      })
+      refetch()
+    } catch (error) {
+      console.error('Failed to create task:', error)
+    }
+  }
 
   // Group tasks by urgency for list view
   const urgentTasks = tasks?.filter(t => t.priority === 'urgent' && t.status !== 'completed') || []
@@ -106,7 +133,7 @@ export default function TasksPage() {
               <LayoutGrid className="w-4 h-4" />
             </button>
           </div>
-          <Button>
+          <Button onClick={() => setShowCreateModal(true)}>
             <Plus className="w-4 h-4" />
             New Task
           </Button>
@@ -168,7 +195,7 @@ export default function TasksPage() {
               <div className="text-center">
                 <p className="text-gray-500 font-medium mb-2">No tasks yet</p>
                 <p className="text-sm text-gray-400 mb-4">Create your first task to get started</p>
-                <Button>
+                <Button onClick={() => setShowCreateModal(true)}>
                   <Plus className="w-4 h-4" />
                   Create Task
                 </Button>
@@ -184,6 +211,106 @@ export default function TasksPage() {
             onCardClick={(card) => console.log('Task clicked:', card)}
           />
         </div>
+      )}
+
+      {/* Create Task Modal */}
+      {showCreateModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            onClick={() => setShowCreateModal(false)}
+          />
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Create New Task</h2>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateTask} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newTask.title}
+                    onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="Follow up with patient"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={newTask.description}
+                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    rows={3}
+                    placeholder="Task details..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Type
+                  </label>
+                  <select
+                    value={newTask.type}
+                    onChange={(e) => setNewTask({ ...newTask, type: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="follow_up">Follow Up</option>
+                    <option value="call">Call</option>
+                    <option value="email">Email</option>
+                    <option value="sms">SMS</option>
+                    <option value="meeting">Meeting</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Priority
+                  </label>
+                  <select
+                    value={newTask.priority}
+                    onChange={(e) => setNewTask({ ...newTask, priority: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowCreateModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="flex-1">
+                    Create Task
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )
