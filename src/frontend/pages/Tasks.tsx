@@ -209,6 +209,7 @@ export default function TasksPage() {
             columns={kanbanColumns}
             onCardMove={handleCardMove}
             onCardClick={(card) => console.log('Task clicked:', card)}
+            onAddCard={(columnId) => setShowCreateModal(true)}
           />
         </div>
       )}

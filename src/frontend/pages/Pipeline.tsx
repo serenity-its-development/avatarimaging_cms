@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useContacts, useUpdateContact } from '../hooks/useAPI'
 import KanbanBoard, { KanbanColumn, KanbanCard } from '../components/kanban/KanbanBoard'
 import { Card, CardContent } from '../components/ui'
@@ -5,6 +7,7 @@ import { Loader2 } from 'lucide-react'
 import { Contact } from '../lib/api'
 
 export default function Pipeline() {
+  const navigate = useNavigate()
   const { data: contacts, isLoading } = useContacts()
   const updateContact = useUpdateContact()
 
@@ -63,6 +66,12 @@ export default function Pipeline() {
     // TODO: Open contact detail panel
   }
 
+  const handleAddCard = (columnId: string) => {
+    // Navigate to contacts page to create new contact with the stage pre-set
+    navigate(`/contacts?stage=${columnId}`)
+    // Or you could open a modal here - for now, redirect to contacts with create modal
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -102,6 +111,7 @@ export default function Pipeline() {
           columns={columns}
           onCardMove={handleCardMove}
           onCardClick={handleCardClick}
+          onAddCard={handleAddCard}
         />
       </div>
     </div>
