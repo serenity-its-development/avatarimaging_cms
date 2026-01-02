@@ -16,6 +16,34 @@ import * as ID from '../utils/id'
 export class D1ContactRepository implements ContactRepository {
   constructor(private db: D1Database) {}
 
+  /**
+   * Find contact by phone number
+   */
+  async findByPhone(phone: string): Promise<Contact | null> {
+    const result = await this.db
+      .prepare('SELECT * FROM contacts WHERE phone = ? LIMIT 1')
+      .bind(phone)
+      .first()
+
+    if (!result) return null
+
+    return this.mapRow(result)
+  }
+
+  /**
+   * Find contact by ManyChat subscriber ID
+   */
+  async findByManyChatId(subscriberId: string): Promise<Contact | null> {
+    const result = await this.db
+      .prepare('SELECT * FROM contacts WHERE manychat_subscriber_id = ? LIMIT 1')
+      .bind(subscriberId)
+      .first()
+
+    if (!result) return null
+
+    return this.mapRow(result)
+  }
+
   async create(data: CreateContactInput): Promise<Contact> {
     const now = Date.now()
     const id = ID.generateContactId()
@@ -188,14 +216,6 @@ export class D1ContactRepository implements ContactRepository {
     }
   }
 
-  async findByPhone(phone: string, tenantId: string): Promise<Contact | null> {
-    const row = await this.db
-      .prepare('SELECT * FROM contacts WHERE phone = ? AND tenant_id = ?')
-      .bind(phone, tenantId)
-      .first()
-
-    return row ? this.mapRow(row) : null
-  }
 
   async findByEmail(email: string, tenantId: string): Promise<Contact | null> {
     const row = await this.db

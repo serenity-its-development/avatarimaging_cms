@@ -67,10 +67,13 @@ binding = "AI"                            # Access in code: env.AI
 # - GOOGLE_CLIENT_SECRET          # Google OAuth
 # - SESSION_SECRET                # JWT signing key
 # - WIX_WEBHOOK_SECRET            # Wix webhook verification
+# - MANYCHAT_API_KEY              # ManyChat API key
 # - MANYCHAT_WEBHOOK_SECRET       # ManyChat webhook verification
-# - CLICKSEND_API_KEY             # ClickSend SMS provider
-# - CLICKSEND_USERNAME            # ClickSend username
-# - SMS_WEBHOOK_SECRET            # SMS inbound webhook verification
+# - MOBILEMESSAGE_API_KEY         # MobileMessage.com.au SMS API key
+# - MOBILEMESSAGE_WEBHOOK_SECRET  # MobileMessage webhook verification
+# - CLICKSEND_API_KEY             # ClickSend SMS provider (legacy)
+# - CLICKSEND_USERNAME            # ClickSend username (legacy)
+# - SENDGRID_API_KEY              # SendGrid email/SMS (optional)
 
 # =====================================================================
 # ENVIRONMENT VARIABLES
@@ -86,15 +89,17 @@ ENVIRONMENT = "development"
 FRONTEND_URL = "http://localhost:5173"    # Update after Cloudflare Pages deployment
 
 # SMS Provider
-SMS_PROVIDER = "clicksend"                # clicksend | messagemedia
-SMS_FROM_NUMBER = "+61400000000"          # TODO: Update with actual number
+SMS_PROVIDER = "mobilemessage"            # mobilemessage | clicksend | sendgrid
+SMS_FROM_NUMBER = "+61400000000"          # TODO: Update with your MobileMessage number
+MOBILEMESSAGE_FROM_NUMBER = "+61400000000" # TODO: Update with actual number
 
 # Wix Integration
 WIX_SITE_ID = ""                          # TODO: Update with Wix site ID
 WIX_BOOKING_CALENDAR_ID = ""              # TODO: Update with calendar ID
 
-# ManyChat Integration
-MANYCHAT_PAGE_ID = ""                     # TODO: Update with ManyChat page ID
+# ManyChat Integration (Instagram/Facebook)
+MANYCHAT_PAGE_ID = ""                     # TODO: Update with Facebook Page ID
+MANYCHAT_ENABLED = "false"                # Set to true when configured
 
 # Google OAuth
 GOOGLE_OAUTH_REDIRECT_URI = "https://avatarimaging-crm.workers.dev/auth/google/callback"
@@ -150,22 +155,55 @@ database_id = ""                          # Local D1 for development
 # =====================================================================
 # PRODUCTION CONFIGURATION
 # =====================================================================
+# Note: For now, using same DB/Queue/AI as default until production DB is created
+# When ready to separate production, create new D1 database and update database_id
 
 [env.production]
 name = "avatarimaging_cms"
 workers_dev = false
-routes = [
-  { pattern = "crm.avatarimaging.com.au/*", zone_name = "avatarimaging.com.au" }
-]
+# Routes commented out - add custom domain via Workers dashboard instead
+# Uncomment when DNS is configured:
+# routes = [
+#   { pattern = "api.avatarimaging.com.au/*", zone_name = "avatarimaging.com.au" }
+# ]
 
 [env.production.vars]
 ENVIRONMENT = "production"
 FRONTEND_URL = "https://crm.avatarimaging.com.au"
+APP_NAME = "Avatar Imaging CRM"
+APP_VERSION = "1.0.0"
+SMS_PROVIDER = "clicksend"
+SMS_FROM_NUMBER = "+61400000000"
+WIX_SITE_ID = ""
+WIX_BOOKING_CALENDAR_ID = ""
+MANYCHAT_PAGE_ID = ""
+GOOGLE_OAUTH_REDIRECT_URI = "https://avatarimaging-crm.workers.dev/auth/google/callback"
+AI_MODEL_WARMNESS = "@cf/meta/llama-3.1-8b-instruct"
+AI_MODEL_INTENT = "@cf/meta/llama-3.2-1b-instruct"
+AI_MAX_TOKENS = 256
+WARMNESS_RECALC_INTERVAL_HOURS = 24
+SPEED_TO_LEAD_TARGET_MINUTES = 5
 
-[env.production.d1_databases]
+# Use same D1 database for now (create separate production DB later if needed)
+[[env.production.d1_databases]]
 binding = "DB"
-database_name = "avatarimaging-crm-db-prod"
-database_id = ""                          # Production D1 database
+database_name = "avatarimaging-crm-db"
+database_id = "4b4ac289-5da1-4712-bdd8-b1dcff041bab"
+
+# Queues configuration (inherits from top level)
+[[env.production.queues.producers]]
+queue = "avatar-queue"
+binding = "QUEUE"
+
+[[env.production.queues.consumers]]
+queue = "avatar-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+
+# AI binding (inherits from top level)
+[env.production.ai]
+binding = "AI"
 
 # =====================================================================
 # BUILD CONFIGURATION

@@ -1,0 +1,40 @@
+# Avatar Imaging CRM - Frontend Worker Configuration
+# Serves static frontend assets via Cloudflare Workers
+# Version: 1.0.0
+
+name = "avatarimaging-crm-frontend"
+main = "worker-frontend.js"
+compatibility_date = "2025-01-02"
+compatibility_flags = ["nodejs_compat"]
+
+# Worker configuration
+workers_dev = true
+
+# Static assets from dist folder
+[site]
+bucket = "./dist"
+
+# CORS headers for API communication
+[[unsafe.bindings]]
+name = "BACKEND_URL"
+type = "plain_text"
+text = "https://avatarimaging_cms.mona-08d.workers.dev"
+
+# Production environment
+[env.production]
+name = "avatarimaging-crm"
+workers_dev = false
+routes = [
+  { pattern = "crm.avatarimaging.com.au/*", zone_name = "avatarimaging.com.au" }
+]
+
+# Static assets from dist folder (required for production)
+[env.production.site]
+bucket = "./dist"
+
+[env.production.vars]
+BACKEND_URL = "https://avatarimaging_cms.mona-08d.workers.dev"
+
+# Note: As this evolves into full ERP, you may want to add:
+# - erp.avatarimaging.com.au for expanded features
+# - Different routes for different modules (inventory, accounting, etc.)

@@ -82,6 +82,11 @@ export class Router {
         return await this.handleSMSRoutes(request, path, method, corsHeaders)
       }
 
+      // Task routes
+      if (path.startsWith('/api/tasks')) {
+        return await this.handleTaskRoutes(request, path, method, corsHeaders)
+      }
+
       // Report routes
       if (path.startsWith('/api/reports')) {
         return await this.handleReportRoutes(request, path, method, corsHeaders)
@@ -280,6 +285,75 @@ export class Router {
     return this.jsonResponse({ error: 'Not found' }, 404, corsHeaders)
   }
 
+  private async handleTaskRoutes(
+    request: Request,
+    path: string,
+    method: string,
+    corsHeaders: Record<string, string>
+  ): Promise<Response> {
+    const context = { tenant_id: 'default', user_id: 'system' }
+
+    // GET /api/tasks - List tasks
+    if (path === '/api/tasks' && method === 'GET') {
+      const url = new URL(request.url)
+      const urgent = url.searchParams.get('urgent') === 'true'
+      const assignedTo = url.searchParams.get('assigned_to')
+      const limit = parseInt(url.searchParams.get('limit') || '50')
+
+      const result = await this.db.tasks.list({
+        tenant_id: context.tenant_id,
+        urgent_only: urgent,
+        assigned_to: assignedTo || undefined,
+        limit
+      })
+
+      return this.jsonResponse(result, 200, corsHeaders)
+    }
+
+    // GET /api/tasks/:id - Get task
+    if (path.match(/^\/api\/tasks\/[^\/]+$/) && method === 'GET') {
+      const id = path.split('/').pop()!
+      const task = await this.db.tasks.get(id)
+
+      if (!task) {
+        return this.jsonResponse({ error: 'Task not found' }, 404, corsHeaders)
+      }
+
+      return this.jsonResponse(task, 200, corsHeaders)
+    }
+
+    // POST /api/tasks - Create task
+    if (path === '/api/tasks' && method === 'POST') {
+      const data = await request.json()
+      const task = await this.db.tasks.create({
+        ...data,
+        tenant_id: context.tenant_id,
+        created_by: context.user_id
+      })
+
+      return this.jsonResponse(task, 201, corsHeaders)
+    }
+
+    // PUT /api/tasks/:id - Update task
+    if (path.match(/^\/api\/tasks\/[^\/]+$/) && method === 'PUT') {
+      const id = path.split('/').pop()!
+      const data = await request.json()
+      const updated = await this.db.tasks.update(id, data)
+
+      return this.jsonResponse(updated, 200, corsHeaders)
+    }
+
+    // DELETE /api/tasks/:id - Delete task
+    if (path.match(/^\/api\/tasks\/[^\/]+$/) && method === 'DELETE') {
+      const id = path.split('/').pop()!
+      await this.db.tasks.delete(id)
+
+      return this.jsonResponse({ success: true }, 200, corsHeaders)
+    }
+
+    return this.jsonResponse({ error: 'Not found' }, 404, corsHeaders)
+  }
+
   private async handleReportRoutes(
     request: Request,
     path: string,
@@ -287,6 +361,47 @@ export class Router {
     corsHeaders: Record<string, string>
   ): Promise<Response> {
     const context = { tenant_id: 'default', user_id: 'system' }
+
+    // GET /api/reports/dashboard - Quick dashboard stats
+    if (path === '/api/reports/dashboard' && method === 'GET') {
+      const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000)
+
+      // Get basic counts
+      const contactsResult = await this.db.contacts.list({ tenant_id: context.tenant_id, limit: 1000 })
+      const bookingsResult = await this.db.bookings.list({ tenant_id: context.tenant_id, limit: 1000 })
+      const tasksResult = await this.db.tasks.list({ tenant_id: context.tenant_id, limit: 1000 })
+
+      const contacts = contactsResult.data || []
+      const bookings = bookingsResult.data || []
+      const tasks = tasksResult.data || []
+
+      // Calculate stats
+      const totalContacts = contacts.length
+      const totalBookings = bookings.length
+      const pendingTasks = tasks.filter(t => t.status === 'pending').length
+      const urgentTasks = tasks.filter(t => t.urgent).length
+
+      const completedBookings = bookings.filter(b => b.status === 'completed').length
+      const cancelledBookings = bookings.filter(b => b.status === 'cancelled').length
+      const noShowBookings = bookings.filter(b => b.status === 'no_show').length
+
+      // Recent activity
+      const recentContacts = contacts.filter(c => c.created_at >= thirtyDaysAgo).length
+      const recentBookings = bookings.filter(b => b.created_at >= thirtyDaysAgo).length
+
+      return this.jsonResponse({
+        total_contacts: totalContacts,
+        total_bookings: totalBookings,
+        pending_tasks: pendingTasks,
+        urgent_tasks: urgentTasks,
+        completed_bookings: completedBookings,
+        cancelled_bookings: cancelledBookings,
+        no_show_bookings: noShowBookings,
+        recent_contacts_30d: recentContacts,
+        recent_bookings_30d: recentBookings,
+        conversion_rate: totalContacts > 0 ? (completedBookings / totalContacts * 100).toFixed(1) : '0.0'
+      }, 200, corsHeaders)
+    }
 
     // GET /api/reports/contacts - Contacts report with AI insights
     if (path === '/api/reports/contacts' && method === 'GET') {
@@ -344,7 +459,42 @@ export class Router {
   ): Promise<Response> {
     const context = { tenant_id: 'default', user_id: 'system' }
 
-    // POST /webhooks/sms/incoming - ClickSend incoming SMS with AI intent detection
+    // MobileMessage SMS webhooks
+    if (path === '/webhooks/mobilemessage/incoming' && method === 'POST') {
+      const { MobileMessageHandler } = await import('../webhooks/MobileMessageHandler')
+      const handler = new MobileMessageHandler(this.db, this.ai, {
+        send: async (queueName: string, message: any) => {
+          await this.env.QUEUE.send(message)
+        }
+      }, this.env)
+
+      return await handler.handleIncoming(request)
+    }
+
+    if (path === '/webhooks/mobilemessage/delivery' && method === 'POST') {
+      const { MobileMessageHandler } = await import('../webhooks/MobileMessageHandler')
+      const handler = new MobileMessageHandler(this.db, this.ai, {
+        send: async (queueName: string, message: any) => {
+          await this.env.QUEUE.send(message)
+        }
+      }, this.env)
+
+      return await handler.handleDeliveryReceipt(request)
+    }
+
+    // ManyChat Instagram/Facebook webhooks
+    if (path === '/webhooks/manychat' && method === 'POST') {
+      const { ManyChatHandler } = await import('../webhooks/ManyChatHandler')
+      const handler = new ManyChatHandler(this.db, this.ai, {
+        send: async (queueName: string, message: any) => {
+          await this.env.QUEUE.send(message)
+        }
+      }, this.env)
+
+      return await handler.handle(request)
+    }
+
+    // Legacy: ClickSend SMS webhook
     if (path === '/webhooks/sms/incoming' && method === 'POST') {
       const data = await request.json()
 

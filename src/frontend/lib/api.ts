@@ -99,7 +99,10 @@ export async function getContacts(params?: {
   if (params?.limit) query.set('limit', params.limit.toString())
 
   const queryString = query.toString()
-  return apiRequest(`/api/contacts${queryString ? `?${queryString}` : ''}`)
+  const result = await apiRequest(`/api/contacts${queryString ? `?${queryString}` : ''}`)
+
+  // Handle paginated response from backend
+  return result.data || result
 }
 
 export async function getContact(id: string): Promise<Contact> {
@@ -174,7 +177,10 @@ export async function getTasks(params?: {
   if (params?.assigned_to) query.set('assigned_to', params.assigned_to)
 
   const queryString = query.toString()
-  return apiRequest(`/api/tasks${queryString ? `?${queryString}` : ''}`)
+  const result = await apiRequest(`/api/tasks${queryString ? `?${queryString}` : ''}`)
+
+  // Handle paginated response from backend
+  return result.data || result
 }
 
 export async function getTask(id: string): Promise<Task> {

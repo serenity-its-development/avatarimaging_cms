@@ -17,6 +17,20 @@ import * as ID from '../utils/id'
 export class D1SMSMessageRepository implements SMSMessageRepository {
   constructor(private db: D1Database) {}
 
+  /**
+   * Find SMS message by provider message ID
+   */
+  async findByProviderMessageId(providerMessageId: string): Promise<SMSMessage | null> {
+    const result = await this.db
+      .prepare('SELECT * FROM sms_messages WHERE provider_message_id = ? LIMIT 1')
+      .bind(providerMessageId)
+      .first()
+
+    if (!result) return null
+
+    return this.mapRow(result)
+  }
+
   async create(data: CreateSMSMessageInput): Promise<SMSMessage> {
     const now = Date.now()
     const id = ID.generateSMSMessageId()
@@ -174,15 +188,6 @@ export class D1SMSMessageRepository implements SMSMessageRepository {
       .all()
 
     return rows.results ? rows.results.map(row => this.mapRow(row)) : []
-  }
-
-  async findByProviderMessageId(providerMessageId: string): Promise<SMSMessage | null> {
-    const row = await this.db
-      .prepare('SELECT * FROM sms_messages WHERE provider_message_id = ?')
-      .bind(providerMessageId)
-      .first()
-
-    return row ? this.mapRow(row) : null
   }
 
   async updateStatus(id: string, status: string, deliveredAt?: number): Promise<void> {
