@@ -5,6 +5,10 @@ import Dashboard from './pages/Dashboard'
 import Pipeline from './pages/Pipeline'
 import Contacts from './pages/Contacts'
 import Tasks from './pages/Tasks'
+import Calendar from './pages/Calendar'
+import Messages from './pages/Messages'
+import Reports from './pages/Reports'
+import AIInsights from './pages/AIInsights'
 import FloatingAICommand from './components/ui/FloatingAICommand'
 import { useAIQuery } from './hooks/useAPI'
 
@@ -44,10 +48,10 @@ function AppContent() {
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/pipeline" element={<Pipeline />} />
-          <Route path="/calendar" element={<div className="p-8 text-center text-gray-500">Calendar Page (Coming Soon)</div>} />
-          <Route path="/messages" element={<div className="p-8 text-center text-gray-500">Messages Page (Coming Soon)</div>} />
-          <Route path="/reports" element={<div className="p-8 text-center text-gray-500">Reports Page (Coming Soon)</div>} />
-          <Route path="/ai-insights" element={<div className="p-8 text-center text-gray-500">AI Insights Page (Coming Soon)</div>} />
+          <Route path="/calendar" element={<Calendar />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/ai-insights" element={<AIInsights />} />
           <Route path="/settings" element={<div className="p-8 text-center text-gray-500">Settings Page (Coming Soon)</div>} />
         </Routes>
       </MainLayout>
