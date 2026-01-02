@@ -198,4 +198,21 @@ export class D1DatabaseGateway implements DatabaseGateway {
       return false
     }
   }
+
+  // Raw SQL queries
+  async raw<T = any>(query: string, params?: any[]): Promise<T[]> {
+    try {
+      let stmt = this.db.prepare(query)
+      
+      if (params && params.length > 0) {
+        stmt = stmt.bind(...params)
+      }
+      
+      const result = await stmt.all<T>()
+      return result.results || []
+    } catch (error) {
+      console.error('Raw query error:', error, 'Query:', query, 'Params:', params)
+      throw error
+    }
+  }
 }

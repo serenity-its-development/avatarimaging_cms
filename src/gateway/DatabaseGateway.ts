@@ -243,6 +243,9 @@ export interface DatabaseGateway {
 
   // Health check
   healthCheck(): Promise<boolean>
+  // Raw SQL queries (for custom queries not covered by repositories)
+  raw<T = any>(query: string, params?: any[]): Promise<T[]>
+
 }
 
 // =====================================================================
