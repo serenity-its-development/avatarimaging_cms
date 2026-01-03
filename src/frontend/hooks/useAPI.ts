@@ -858,7 +858,7 @@ export function useCreateProcedure() {
     mutationFn: api.createProcedure,
     onSuccess: (newProcedure) => {
       // Optimistically update the cache with the new procedure
-      queryClient.setQueryData(['procedures', true], (old: any) => {
+      queryClient.setQueryData(['procedures', { activeOnly: true }], (old: any) => {
         if (!old) return { success: true, data: [newProcedure] }
         return {
           ...old,
@@ -927,7 +927,7 @@ export function useCreateDiscountCode() {
     mutationFn: api.createDiscountCode,
     onSuccess: (newCode) => {
       // Optimistically update the cache
-      queryClient.setQueryData(['discount-codes', true], (old: any) => {
+      queryClient.setQueryData(['discount-codes', { activeOnly: true }], (old: any) => {
         if (!old) return { success: true, data: [newCode] }
         return {
           ...old,
@@ -1003,7 +1003,7 @@ export function useCreateInfluencer() {
     mutationFn: api.createInfluencer,
     onSuccess: (newInfluencer) => {
       // Optimistically update the cache
-      queryClient.setQueryData(['influencers', true], (old: any) => {
+      queryClient.setQueryData(['influencers', { activeOnly: true }], (old: any) => {
         if (!old) return { success: true, data: [newInfluencer] }
         return {
           ...old,
