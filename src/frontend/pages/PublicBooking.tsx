@@ -94,63 +94,11 @@ function BookingFlow() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <img src="/logo.webp" alt="Avatar Imaging" className="h-12" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Book Your Appointment</h1>
-              <p className="text-gray-600 text-sm">Secure online booking with instant confirmation</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Progress Steps */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-          <div className="flex items-center justify-between">
-            {[
-              { key: 'procedure', label: 'Select Service', icon: '1' },
-              { key: 'datetime', label: 'Date & Time', icon: '2' },
-              { key: 'contact', label: 'Your Details', icon: '3' },
-              { key: 'payment', label: 'Payment', icon: '4' },
-              { key: 'confirmation', label: 'Confirmed', icon: '✓' }
-            ].map((s, i, arr) => {
-              const steps: Step[] = ['procedure', 'datetime', 'contact', 'payment', 'confirmation']
-              const currentIndex = steps.indexOf(step)
-              const stepIndex = steps.indexOf(s.key as Step)
-              const isActive = stepIndex === currentIndex
-              const isComplete = stepIndex < currentIndex
-
-              return (
-                <React.Fragment key={s.key}>
-                  <div className="flex flex-col items-center flex-1">
-                    <div className={`
-                      w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm
-                      ${isActive ? 'bg-blue-600 text-white' : ''}
-                      ${isComplete ? 'bg-green-600 text-white' : ''}
-                      ${!isActive && !isComplete ? 'bg-gray-200 text-gray-600' : ''}
-                    `}>
-                      {s.icon}
-                    </div>
-                    <span className={`text-xs mt-2 text-center ${isActive ? 'font-semibold text-blue-600' : 'text-gray-600'}`}>
-                      {s.label}
-                    </span>
-                  </div>
-                  {i < arr.length - 1 && (
-                    <div className={`flex-1 h-0.5 mx-2 mt-4 ${isComplete ? 'bg-green-600' : 'bg-gray-200'}`} />
-                  )}
-                </React.Fragment>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
+    <div className="min-h-screen bg-white">
+      {/* Clean minimal container for iframe embedding */}
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        {/* Clean minimal content - no decorative elements */}
+        <div className="bg-white p-6">
           {step !== 'procedure' && step !== 'confirmation' && (
             <button
               onClick={goBack}
