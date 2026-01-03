@@ -11,6 +11,7 @@ import { SMSService } from '../services/SMSService'
 import { EmailMarketingService } from '../services/EmailMarketingService'
 import { ReportingService } from '../services/ReportingService'
 import { AutomationService } from '../services/AutomationService'
+import { ResourceRouter } from './ResourceRouter'
 
 export class Router {
   private services: {
@@ -21,6 +22,7 @@ export class Router {
     reporting: ReportingService
     automation: AutomationService
   }
+  private resourceRouter: ResourceRouter
 
   constructor(
     private db: D1DatabaseGateway,
@@ -43,6 +45,9 @@ export class Router {
       reporting: new ReportingService(db, ai, queue),
       automation: new AutomationService(db, queue)
     }
+
+    // Initialize resource booking router
+    this.resourceRouter = new ResourceRouter(env.DB)
   }
 
   async handle(request: Request): Promise<Response> {
@@ -95,6 +100,17 @@ export class Router {
       // Webhook routes
       if (path.startsWith('/webhooks')) {
         return await this.handleWebhooks(request, path, method, corsHeaders)
+      }
+
+      // Resource booking routes (resources, availability, procedures, slots, appointments, inventory)
+      if (path.startsWith('/api/resources') ||
+          path.startsWith('/api/availability') ||
+          path.startsWith('/api/procedures') ||
+          path.startsWith('/api/slots') ||
+          path.startsWith('/api/appointments') ||
+          path.startsWith('/api/inventory')) {
+        const response = await this.resourceRouter.handle(request, path, method)
+        if (response) return response
       }
 
       return this.jsonResponse({ error: 'Not found' }, 404, corsHeaders)
