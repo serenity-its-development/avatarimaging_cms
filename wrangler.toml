@@ -14,7 +14,8 @@ compatibility_flags = ["nodejs_compat"]
 # Worker limits (Free tier: 100K requests/day, 10ms CPU time)
 workers_dev = true
 routes = [
-  { pattern = "crm.avatarimaging.com.au/*", zone_name = "avatarimaging.com.au" }
+  { pattern = "crm.avatarimaging.com.au/*", zone_name = "avatarimaging.com.au" },
+  { pattern = "book.avatarimaging.com.au/*", zone_name = "avatarimaging.com.au" }
 ]
 
 # Serve frontend static assets (Modern approach - 2025)
@@ -81,6 +82,10 @@ binding = "AI"                            # Access in code: env.AI
 # - CLICKSEND_API_KEY             # ClickSend SMS provider (legacy)
 # - CLICKSEND_USERNAME            # ClickSend username (legacy)
 # - SENDGRID_API_KEY              # SendGrid email/SMS (optional)
+# - RESEND_API_KEY                # Resend email API for booking confirmations
+# - STRIPE_SECRET_KEY             # Stripe secret key for payment processing
+# - STRIPE_PUBLISHABLE_KEY        # Stripe publishable key (can be environment variable)
+# - STRIPE_WEBHOOK_SECRET         # Stripe webhook signing secret
 
 # =====================================================================
 # ENVIRONMENT VARIABLES
