@@ -76,6 +76,10 @@ export default {
         case '0 8 * * 1': // Weekly Monday 8am - Send scheduled reports
           await sendScheduledReports(db, ai, env)
           break
+
+        case '*/15 * * * *': // Every 15 minutes - Process pending AI tasks
+          await processPendingAITasks(db, ai, env)
+          break
       }
     } catch (error) {
       console.error('Scheduled job error:', error)
@@ -110,6 +114,10 @@ async function processQueueMessage(
 
     case 'wix_sync':
       await processWixSync(message, db, env)
+      break
+
+    case 'process_ai_task':
+      await processAITask(message, db, ai, env)
       break
 
     default:
@@ -279,4 +287,51 @@ async function sendScheduledReports(
   const processed = await reportingService.runScheduledReports()
 
   console.log(`Processed ${processed} scheduled reports`)
+}
+
+/**
+ * AI Task processor - Executes tasks assigned to AI
+ */
+async function processAITask(
+  message: any,
+  db: D1DatabaseGateway,
+  ai: AILayer,
+  env: Env
+): Promise<void> {
+  const { taskId } = message
+
+  if (!taskId) {
+    console.error('AI task message missing taskId')
+    return
+  }
+
+  try {
+    const { AITaskProcessor } = await import('./services/AITaskProcessor')
+    const processor = new AITaskProcessor(db, ai)
+    const result = await processor.processTask(taskId)
+
+    console.log(`AI task ${taskId} processed:`, result.success ? 'success' : 'failed')
+  } catch (error) {
+    console.error(`Failed to process AI task ${taskId}:`, error)
+    throw error
+  }
+}
+
+/**
+ * Process all pending AI tasks (scheduled job)
+ */
+async function processPendingAITasks(
+  db: D1DatabaseGateway,
+  ai: AILayer,
+  env: Env
+): Promise<void> {
+  try {
+    const { AITaskProcessor } = await import('./services/AITaskProcessor')
+    const processor = new AITaskProcessor(db, ai)
+    const stats = await processor.processPendingAITasks()
+
+    console.log(`Processed ${stats.processed} AI tasks: ${stats.succeeded} succeeded, ${stats.failed} failed`)
+  } catch (error) {
+    console.error('Failed to process pending AI tasks:', error)
+  }
 }

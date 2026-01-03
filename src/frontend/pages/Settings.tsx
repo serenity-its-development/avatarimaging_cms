@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Card } from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
+import { User, Sliders } from 'lucide-react'
 
 interface SettingsSection {
   title: string
@@ -400,6 +402,37 @@ export default function Settings() {
           </div>
         </div>
       )}
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-2 gap-4">
+        <Link to="/settings/preferences">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <div className="p-6 flex items-center gap-4">
+              <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                <User className="w-6 h-6 text-primary-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">User Preferences</h3>
+                <p className="text-sm text-gray-600">Customize your personal CRM experience</p>
+              </div>
+            </div>
+          </Card>
+        </Link>
+
+        <Link to="/settings/pipelines">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <div className="p-6 flex items-center gap-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Sliders className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Pipeline Management</h3>
+                <p className="text-sm text-gray-600">Configure sales pipelines and stages</p>
+              </div>
+            </div>
+          </Card>
+        </Link>
+      </div>
 
       {/* Warning Banner */}
       <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">

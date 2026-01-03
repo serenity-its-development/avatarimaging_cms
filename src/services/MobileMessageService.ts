@@ -192,6 +192,28 @@ export class MobileMessageService {
       notes: payload.message
     })
 
+    // AI Booking Assistant - Check for booking-related intents
+    const { AIBookingAssistant } = await import('./AIBookingAssistant')
+    const bookingAssistant = new AIBookingAssistant(this.db, this.ai)
+
+    let bookingAction: string | undefined
+    try {
+      const bookingResult = await bookingAssistant.processMessage({
+        contact_id: contact.id,
+        message: payload.message,
+        channel: 'sms',
+        tenant_id: contact.tenant_id,
+      })
+
+      if (bookingResult.draft) {
+        bookingAction = `AI ${bookingResult.draft.action_type} draft created`
+      } else if (bookingResult.auto_applied) {
+        bookingAction = 'AI auto-cancelled booking'
+      }
+    } catch (error) {
+      console.error('AI Booking Assistant error:', error)
+    }
+
     // AI intent detection
     const intentResult = await this.ai.detectIntent(payload.message, {
       contact_name: contact.name,
@@ -213,12 +235,16 @@ export class MobileMessageService {
         contact_id: contact.id,
         sms_id: sms.id,
         message: payload.message,
-        intent_detected: intent
+        intent_detected: intent,
+        booking_action: bookingAction
       }
     })
 
-    // Take action based on intent
-    const actionTaken = await this.handleIntent(contact, intent, payload.message)
+    // Take action based on intent (only if not already handled by booking assistant)
+    let actionTaken = bookingAction
+    if (!actionTaken) {
+      actionTaken = await this.handleIntent(contact, intent, payload.message)
+    }
 
     return {
       contact,

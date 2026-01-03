@@ -584,4 +584,62 @@ JSON format:
     const days = Math.floor(hours / 24)
     return `${days}d ago`
   }
+
+  /**
+   * Generate text using AI with custom parameters (for templates)
+   */
+  async generateText(
+    prompt: string,
+    options?: {
+      systemPrompt?: string
+      temperature?: number
+      maxTokens?: number
+      model?: string
+    }
+  ): Promise<string> {
+    try {
+      const model = options?.model || '@cf/meta/llama-3.1-8b-instruct'
+
+      // Build the full prompt with system context if provided
+      const fullPrompt = options?.systemPrompt
+        ? `${options.systemPrompt}\n\n${prompt}`
+        : prompt
+
+      const response = await this.ai.run(model, {
+        prompt: fullPrompt,
+        max_tokens: options?.maxTokens || 256,
+        temperature: options?.temperature || 0.7
+      })
+
+      return response.response || ''
+    } catch (error) {
+      console.error('AI text generation failed:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Raw AI call for advanced use cases (chat-style models)
+   */
+  async raw<T = any>(params: {
+    model: string
+    messages: Array<{ role: string; content: string }>
+    max_tokens?: number
+    temperature?: number
+  }): Promise<{ result: T }> {
+    try {
+      const response = await this.ai.run(params.model, {
+        messages: params.messages,
+        max_tokens: params.max_tokens || 256,
+        temperature: params.temperature || 0.7
+      })
+
+      return {
+        result: response as T
+      }
+    } catch (error) {
+      console.error('AI raw call failed:', error)
+      throw error
+    }
+  }
 }

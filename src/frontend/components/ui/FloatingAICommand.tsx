@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils'
 import { Sparkles, Send, Mic, MicOff, X, Minimize2, Maximize2, GripVertical, Palette } from 'lucide-react'
 import Button from './Button'
 import Toast from './Toast'
+import { usePreferencesContext } from '../../contexts/PreferencesContext'
 
 interface FloatingAICommandProps {
   onSubmit: (message: string) => Promise<void>
@@ -11,13 +12,22 @@ interface FloatingAICommandProps {
 }
 
 export default function FloatingAICommand({ onSubmit, onDock, isDocked = false }: FloatingAICommandProps) {
+  const { preferences, updatePreferences } = usePreferencesContext()
+
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
-  const [position, setPosition] = useState({ x: window.innerWidth - 420, y: window.innerHeight - 400 })
-  const [size, setSize] = useState({ width: 400, height: 350 })
+
+  // Initialize from preferences
+  const [position, setPosition] = useState(
+    preferences?.ai_window_position || { x: window.innerWidth - 420, y: window.innerHeight - 400 }
+  )
+  const [size, setSize] = useState(
+    preferences?.ai_window_size || { width: 400, height: 350 }
+  )
+
   const [opacity, setOpacity] = useState(100)
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
@@ -74,22 +84,26 @@ export default function FloatingAICommand({ onSubmit, onDock, isDocked = false }
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen])
 
-  // Load saved settings from localStorage
+  // Load saved settings from preferences
   useEffect(() => {
-    const savedPosition = localStorage.getItem('ai-command-position')
-    const savedSize = localStorage.getItem('ai-command-size')
-    const savedOpacity = localStorage.getItem('ai-command-opacity')
+    if (preferences?.ai_window_position) {
+      setPosition(preferences.ai_window_position)
+    }
+    if (preferences?.ai_window_size) {
+      setSize(preferences.ai_window_size)
+    }
+  }, [preferences])
 
-    if (savedPosition) setPosition(JSON.parse(savedPosition))
-    if (savedSize) setSize(JSON.parse(savedSize))
-    if (savedOpacity) setOpacity(JSON.parse(savedOpacity))
-  }, [])
-
-  // Save settings to localStorage
-  const saveSettings = () => {
-    localStorage.setItem('ai-command-position', JSON.stringify(position))
-    localStorage.setItem('ai-command-size', JSON.stringify(size))
-    localStorage.setItem('ai-command-opacity', JSON.stringify(opacity))
+  // Save settings to user preferences
+  const saveSettings = async () => {
+    try {
+      await updatePreferences({
+        ai_window_position: position,
+        ai_window_size: size,
+      })
+    } catch (error) {
+      console.error('Failed to save AI window preferences:', error)
+    }
   }
 
   const handleSubmit = async () => {

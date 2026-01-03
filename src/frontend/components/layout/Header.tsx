@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Bell, CheckCircle, AlertCircle, Info, Settings, LogOut, User } from 'lucide-react'
+import { Search, Bell, CheckCircle, AlertCircle, Info, Settings, LogOut, User, Users, ChevronDown } from 'lucide-react'
 import Avatar from '../ui/Avatar'
 import Badge from '../ui/Badge'
+import { useStaff } from '../../hooks/useAPI'
 
 interface Notification {
   id: string
@@ -17,9 +18,14 @@ export default function Header() {
   const navigate = useNavigate()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showStaffSelector, setShowStaffSelector] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [currentStaffId, setCurrentStaffId] = useState<string>('system')
   const notificationRef = useRef<HTMLDivElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const staffSelectorRef = useRef<HTMLDivElement>(null)
+
+  const { data: staffList } = useStaff()
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,6 +66,21 @@ export default function Header() {
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
+  // Handler for clicking a notification
+  const handleNotificationClick = (notification: Notification) => {
+    // TODO: Navigate to the relevant page based on notification type
+    // For now, just mark as read
+    console.log('Notification clicked:', notification)
+    setShowNotifications(false)
+  }
+
+  // Handler for viewing all notifications
+  const handleViewAllNotifications = () => {
+    // TODO: Navigate to notifications page
+    navigate('/notifications')
+    setShowNotifications(false)
+  }
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -69,16 +90,22 @@ export default function Header() {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setShowUserMenu(false)
       }
+      if (staffSelectorRef.current && !staffSelectorRef.current.contains(event.target as Node)) {
+        setShowStaffSelector(false)
+      }
     }
 
-    if (showNotifications || showUserMenu) {
+    if (showNotifications || showUserMenu || showStaffSelector) {
       document.addEventListener('mousedown', handleClickOutside)
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showNotifications, showUserMenu])
+  }, [showNotifications, showUserMenu, showStaffSelector])
+
+  const currentStaff = staffList?.find(s => s.id === currentStaffId)
+  const staffName = currentStaff ? `${currentStaff.first_name} ${currentStaff.last_name}` : 'System'
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -110,6 +137,74 @@ export default function Header() {
 
         {/* Right Section */}
         <div className="flex items-center gap-4 ml-6">
+          {/* Staff Selector - Temporary for Testing */}
+          <div className="relative" ref={staffSelectorRef}>
+            <button
+              onClick={() => setShowStaffSelector(!showStaffSelector)}
+              className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              <Users className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-900">{staffName}</span>
+              <ChevronDown className="w-4 h-4 text-blue-600" />
+            </button>
+
+            {/* Staff Selector Dropdown */}
+            {showStaffSelector && (
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                <div className="px-4 py-2 border-b border-gray-200">
+                  <p className="text-xs font-semibold text-gray-500 uppercase">Testing As</p>
+                  <p className="text-xs text-gray-400 mt-1">Select staff member to test as</p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setCurrentStaffId('system')
+                    setShowStaffSelector(false)
+                  }}
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-3 ${
+                    currentStaffId === 'system' ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                  }`}
+                >
+                  <Avatar size="sm" fallback="SYS" />
+                  <div>
+                    <p className="font-medium">System</p>
+                    <p className="text-xs text-gray-500">Administrator</p>
+                  </div>
+                </button>
+
+                <div className="border-t border-gray-100 my-1"></div>
+
+                {staffList?.map((staff) => (
+                  <button
+                    key={staff.id}
+                    onClick={() => {
+                      setCurrentStaffId(staff.id)
+                      setShowStaffSelector(false)
+                    }}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-3 ${
+                      currentStaffId === staff.id ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                    }`}
+                  >
+                    <Avatar
+                      size="sm"
+                      fallback={`${staff.first_name[0]}${staff.last_name[0]}`}
+                    />
+                    <div>
+                      <p className="font-medium">{staff.first_name} {staff.last_name}</p>
+                      <p className="text-xs text-gray-500">{staff.email}</p>
+                    </div>
+                  </button>
+                ))}
+
+                {(!staffList || staffList.length === 0) && (
+                  <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                    No staff members found
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Notifications */}
           <div className="relative" ref={notificationRef}>
             <button
@@ -144,6 +239,7 @@ export default function Header() {
                     notifications.map((notification) => (
                       <button
                         key={notification.id}
+                        onClick={() => handleNotificationClick(notification)}
                         className={`w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-100 last:border-0 ${
                           !notification.read ? 'bg-primary-50/30' : ''
                         }`}
@@ -175,7 +271,10 @@ export default function Header() {
                 </div>
 
                 <div className="px-4 py-2 border-t border-gray-200">
-                  <button className="text-sm text-primary-600 hover:text-primary-700 font-medium w-full text-center">
+                  <button
+                    onClick={handleViewAllNotifications}
+                    className="text-sm text-primary-600 hover:text-primary-700 font-medium w-full text-center"
+                  >
                     View all notifications
                   </button>
                 </div>

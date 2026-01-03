@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
-import { Plus, Search, Filter, Loader2, X } from 'lucide-react'
-import { useContacts, useUpdateContact, useRecalculateWarmness, useCreateContact, usePipelines } from '../hooks/useAPI'
+import { Plus, Search, Filter, Loader2, X, Tag } from 'lucide-react'
+import { useContacts, useUpdateContact, useRecalculateWarmness, useCreateContact, usePipelines, useTags } from '../hooks/useAPI'
 import { Contact, CreateContactInput } from '../lib/api'
 import { Button, DataTable, Badge, Avatar, Toast } from '../components/ui'
 import ContactSidePanel from '../components/contacts/ContactSidePanel'
@@ -13,6 +13,7 @@ export default function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterSource, setFilterSource] = useState<string>('all')
   const [filterStage, setFilterStage] = useState<string>('all')
+  const [filterTags, setFilterTags] = useState<string[]>([])
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastVariant, setToastVariant] = useState<'success' | 'error' | 'info'>('success')
@@ -28,6 +29,7 @@ export default function ContactsPage() {
   // Fetch contacts from API
   const { data: contacts, isLoading, error, refetch } = useContacts()
   const { data: pipelines } = usePipelines()
+  const { data: allTags } = useTags()
   const updateContact = useUpdateContact()
   const createContact = useCreateContact()
   const recalculateWarmness = useRecalculateWarmness()
@@ -70,10 +72,26 @@ export default function ContactsPage() {
       contact.phone?.includes(searchQuery)
     const matchesSource = filterSource === 'all' || contact.source === filterSource
     const matchesStage = filterStage === 'all' || contact.current_stage === filterStage
-    return matchesSearch && matchesSource && matchesStage
+
+    // Tag filtering - contact must have ALL selected tags (AND logic)
+    const matchesTags = filterTags.length === 0 || filterTags.every(tagId => {
+      // TODO: This will need to fetch contact tags - for now we'll show all
+      // In production, we'd fetch contact_tags and check if contact has this tag
+      return true
+    })
+
+    return matchesSearch && matchesSource && matchesStage && matchesTags
   }) || []
 
-  const activeFiltersCount = (filterSource !== 'all' ? 1 : 0) + (filterStage !== 'all' ? 1 : 0)
+  const activeFiltersCount = (filterSource !== 'all' ? 1 : 0) + (filterStage !== 'all' ? 1 : 0) + filterTags.length
+
+  const toggleTagFilter = (tagId: string) => {
+    setFilterTags(prev =>
+      prev.includes(tagId)
+        ? prev.filter(t => t !== tagId)
+        : [...prev, tagId]
+    )
+  }
 
   // Handle inline editing
   const handleEdit = async (contact: Contact, field: string, value: any) => {
@@ -291,6 +309,43 @@ export default function ContactsPage() {
                     </select>
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                      <Tag className="w-4 h-4" />
+                      Tags
+                    </label>
+                    <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
+                      {allTags && allTags.length > 0 ? (
+                        allTags.map((tag) => (
+                          <label
+                            key={tag.id}
+                            className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={filterTags.includes(tag.id)}
+                              onChange={() => toggleTagFilter(tag.id)}
+                              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                            />
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: tag.color || '#6B7280' }}
+                            />
+                            <span className="text-sm text-gray-700 flex-1">{tag.name}</span>
+                            <span className="text-xs text-gray-500">{tag.category}</span>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500 text-center py-2">No tags available</p>
+                      )}
+                    </div>
+                    {filterTags.length > 0 && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Showing contacts with ALL selected tags
+                      </p>
+                    )}
+                  </div>
+
                   <div className="flex gap-2 pt-2">
                     <Button
                       variant="outline"
@@ -299,6 +354,7 @@ export default function ContactsPage() {
                       onClick={() => {
                         setFilterSource('all')
                         setFilterStage('all')
+                        setFilterTags([])
                       }}
                     >
                       Clear

@@ -11,9 +11,11 @@ import {
   useReorderStages
 } from '../hooks/useAPI'
 import { Pipeline, PipelineStage } from '../lib/api'
-import { Button, Card, CardContent, Badge } from '../components/ui'
+import { Button, Card, CardContent, Badge, useConfirmDialog, useAlertDialog } from '../components/ui'
 
 export default function PipelineSettings() {
+  const { confirm, DialogComponent: ConfirmDialog } = useConfirmDialog()
+  const { alert: showAlert, DialogComponent: AlertDialog } = useAlertDialog()
   const { data: pipelines, isLoading, refetch } = usePipelines()
   const createPipeline = useCreatePipeline()
   const updatePipeline = useUpdatePipeline()
@@ -53,7 +55,11 @@ export default function PipelineSettings() {
       refetch()
     } catch (error) {
       console.error('Failed to create pipeline:', error)
-      alert('Failed to create pipeline')
+      showAlert({
+        title: 'Error',
+        message: 'Failed to create pipeline. Please try again.',
+        type: 'danger'
+      })
     }
   }
 
@@ -66,19 +72,35 @@ export default function PipelineSettings() {
       refetch()
     } catch (error) {
       console.error('Failed to set default:', error)
-      alert('Failed to set as default pipeline')
+      showAlert({
+        title: 'Error',
+        message: 'Failed to set as default pipeline. Please try again.',
+        type: 'danger'
+      })
     }
   }
 
   const handleDeletePipeline = async (pipelineId: string) => {
-    if (!confirm('Are you sure you want to delete this pipeline?')) return
+    const confirmed = await confirm({
+      title: 'Delete Pipeline',
+      message: 'Are you sure you want to delete this pipeline? This action cannot be undone.',
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    })
+
+    if (!confirmed) return
 
     try {
       await deletePipeline.mutateAsync(pipelineId)
       refetch()
     } catch (error) {
       console.error('Failed to delete pipeline:', error)
-      alert('Failed to delete pipeline. Make sure no contacts are using it.')
+      showAlert({
+        title: 'Error',
+        message: 'Failed to delete pipeline. Make sure no contacts are using it.',
+        type: 'danger'
+      })
     }
   }
 
@@ -374,6 +396,9 @@ export default function PipelineSettings() {
           </div>
         </>
       )}
+
+      <ConfirmDialog />
+      <AlertDialog />
     </div>
   )
 }

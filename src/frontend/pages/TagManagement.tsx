@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Plus, Tag as TagIcon, Trash2, Sparkles, Loader2, Edit2 } from 'lucide-react'
 import { useTags, useCreateTag, useDeleteTag, useUpdateTag } from '../hooks/useAPI'
-import { Button, Badge, Card, CardContent } from '../components/ui'
+import { Button, Badge, Card, CardContent, useConfirmDialog } from '../components/ui'
 
 export default function TagManagement() {
+  const { confirm, DialogComponent: ConfirmDialog } = useConfirmDialog()
   const { data: tags, isLoading, refetch } = useTags()
   const createTag = useCreateTag()
   const deleteTag = useDeleteTag()
@@ -89,7 +90,15 @@ export default function TagManagement() {
   }
 
   const handleDeleteTag = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this tag?')) return
+    const confirmed = await confirm({
+      title: 'Delete Tag',
+      message: 'Are you sure you want to delete this tag? This will remove it from all contacts.',
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    })
+
+    if (!confirmed) return
 
     try {
       await deleteTag.mutateAsync(id)
@@ -382,6 +391,8 @@ export default function TagManagement() {
           </div>
         </>
       )}
+
+      <ConfirmDialog />
     </div>
   )
 }

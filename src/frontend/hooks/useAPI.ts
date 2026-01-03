@@ -105,6 +105,15 @@ export function useTask(id: string) {
   })
 }
 
+export function useContactTasks(contactId: string) {
+  return useQuery({
+    queryKey: ['tasks', 'contact', contactId],
+    queryFn: () => api.getContactTasks(contactId),
+    enabled: !!contactId,
+    staleTime: 10000,
+  })
+}
+
 export function useCreateTask() {
   const queryClient = useQueryClient()
 
@@ -480,5 +489,344 @@ export function useAutoTagContact() {
       queryClient.invalidateQueries({ queryKey: ['tags'] })
       queryClient.invalidateQueries({ queryKey: ['contacts'] })
     },
+  })
+}
+
+// =============================================================================
+// STAFF & ROLES
+// =============================================================================
+
+// Roles
+export function useRoles(includeInactive = false) {
+  return useQuery({
+    queryKey: ['roles', includeInactive],
+    queryFn: () => api.getRoles(includeInactive),
+    staleTime: 60000, // Roles don't change often
+  })
+}
+
+export function useRole(id: string) {
+  return useQuery({
+    queryKey: ['roles', id],
+    queryFn: () => api.getRole(id),
+    enabled: !!id,
+  })
+}
+
+export function useCreateRole() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.createRole,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+    },
+  })
+}
+
+export function useUpdateRole() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: api.UpdateRoleInput }) =>
+      api.updateRole(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['roles', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+    },
+  })
+}
+
+export function useDeleteRole() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.deleteRole,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+    },
+  })
+}
+
+// Staff
+export function useStaff(options?: Parameters<typeof api.getStaff>[0]) {
+  return useQuery({
+    queryKey: ['staff', options],
+    queryFn: () => api.getStaff(options),
+    staleTime: 30000,
+  })
+}
+
+export function useStaffMember(id: string) {
+  return useQuery({
+    queryKey: ['staff', id],
+    queryFn: () => api.getStaffMember(id),
+    enabled: !!id,
+  })
+}
+
+export function useCreateStaff() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.createStaff,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff'] })
+    },
+  })
+}
+
+export function useUpdateStaff() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: api.UpdateStaffInput }) =>
+      api.updateStaff(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['staff', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['staff'] })
+    },
+  })
+}
+
+export function useDeleteStaff() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.deleteStaff,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff'] })
+    },
+  })
+}
+
+// Staff Assignments
+export function useContactStaffAssignments(contactId: string) {
+  return useQuery({
+    queryKey: ['staff', 'assignments', 'contact', contactId],
+    queryFn: () => api.getContactStaffAssignments(contactId),
+    enabled: !!contactId,
+    staleTime: 10000,
+  })
+}
+
+export function useStaffAssignments(staffId: string) {
+  return useQuery({
+    queryKey: ['staff', 'assignments', 'staff', staffId],
+    queryFn: () => api.getStaffAssignments(staffId),
+    enabled: !!staffId,
+    staleTime: 10000,
+  })
+}
+
+export function useAssignStaff() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.assignStaff,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['staff', 'assignments', 'contact', variables.contact_id] })
+      queryClient.invalidateQueries({ queryKey: ['staff', 'assignments', 'staff', variables.staff_id] })
+      queryClient.invalidateQueries({ queryKey: ['staff'] })
+    },
+  })
+}
+
+export function useUnassignStaff() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ contactId, staffId }: { contactId: string; staffId: string }) =>
+      api.unassignStaff(contactId, staffId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['staff', 'assignments', 'contact', variables.contactId] })
+      queryClient.invalidateQueries({ queryKey: ['staff', 'assignments', 'staff', variables.staffId] })
+      queryClient.invalidateQueries({ queryKey: ['staff'] })
+    },
+  })
+}
+
+// AI Staff Suggestions
+export function useSuggestStaff() {
+  return useMutation({
+    mutationFn: ({ contactData, assignmentType }: {
+      contactData: Parameters<typeof api.suggestStaff>[0]
+      assignmentType?: Parameters<typeof api.suggestStaff>[1]
+    }) => api.suggestStaff(contactData, assignmentType),
+  })
+}
+
+// =============================================================================
+// TEMPLATES
+// =============================================================================
+
+export function useTemplates(filters?: Parameters<typeof api.getTemplates>[0]) {
+  return useQuery({
+    queryKey: ['templates', filters],
+    queryFn: () => api.getTemplates(filters),
+    staleTime: 30000,
+  })
+}
+
+export function useTemplate(id: string) {
+  return useQuery({
+    queryKey: ['templates', id],
+    queryFn: () => api.getTemplate(id),
+    enabled: !!id,
+  })
+}
+
+export function useDefaultTemplate(category: string) {
+  return useQuery({
+    queryKey: ['templates', 'default', category],
+    queryFn: () => api.getDefaultTemplate(category),
+    enabled: !!category,
+  })
+}
+
+export function useQuickActionTemplates(category?: string) {
+  return useQuery({
+    queryKey: ['templates', 'quick-actions', category],
+    queryFn: () => api.getQuickActionTemplates(category),
+    staleTime: 60000,
+  })
+}
+
+export function useCreateTemplate() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.createTemplate,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] })
+    },
+  })
+}
+
+export function useUpdateTemplate() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: api.UpdateTemplateInput }) =>
+      api.updateTemplate(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] })
+      queryClient.invalidateQueries({ queryKey: ['templates', variables.id] })
+    },
+  })
+}
+
+export function useDeleteTemplate() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.deleteTemplate,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] })
+    },
+  })
+}
+
+export function useRenderTemplate() {
+  return useMutation({
+    mutationFn: ({ templateId, variables }: { templateId: string; variables: Record<string, string> }) =>
+      api.renderTemplate(templateId, variables),
+  })
+}
+
+export function useExecuteAITemplate() {
+  return useMutation({
+    mutationFn: ({ templateId, variables }: { templateId: string; variables: Record<string, string> }) =>
+      api.executeAITemplate(templateId, variables),
+  })
+}
+
+export function useDuplicateTemplate() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ templateId, newName }: { templateId: string; newName: string }) =>
+      api.duplicateTemplate(templateId, newName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] })
+    },
+  })
+}
+
+// =============================================================================
+// BOOKING DRAFTS (AI Assistant)
+// =============================================================================
+
+export function useBookingDrafts() {
+  return useQuery({
+    queryKey: ['booking-drafts'],
+    queryFn: api.getBookingDrafts,
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    staleTime: 10000,
+  })
+}
+
+export function useApproveDraft() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.approveDraft,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['booking-drafts'] })
+      queryClient.invalidateQueries({ queryKey: ['bookings'] })
+    },
+  })
+}
+
+export function useRejectDraft() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ draftId, notes }: { draftId: string; notes?: string }) =>
+      api.rejectDraft(draftId, notes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['booking-drafts'] })
+    },
+  })
+}
+
+// =============================================================================
+// USER PREFERENCES
+// =============================================================================
+
+export function usePreferences() {
+  return useQuery({
+    queryKey: ['preferences'],
+    queryFn: api.getPreferences,
+    staleTime: 300000, // 5 minutes - preferences don't change often
+  })
+}
+
+export function useUpdatePreferences() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.updatePreferences,
+    onSuccess: (data) => {
+      queryClient.setQueryData(['preferences'], data)
+    },
+  })
+}
+
+export function useResetPreferences() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.resetPreferences,
+    onSuccess: (data) => {
+      queryClient.setQueryData(['preferences'], data)
+    },
+  })
+}
+
+export function usePreferenceHistory() {
+  return useQuery({
+    queryKey: ['preferences', 'history'],
+    queryFn: api.getPreferenceHistory,
   })
 }

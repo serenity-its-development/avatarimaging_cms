@@ -185,6 +185,10 @@ export async function getTask(id: string): Promise<Task> {
   return apiRequest(`/api/tasks/${id}`)
 }
 
+export async function getContactTasks(contactId: string): Promise<Task[]> {
+  return apiRequest(`/api/tasks/contact/${contactId}`)
+}
+
 export async function createTask(data: CreateTaskInput): Promise<Task> {
   return apiRequest('/api/tasks', {
     method: 'POST',
@@ -586,6 +590,578 @@ export async function autoTagContact(contactId: string, contactData: any, minCon
   const result = await apiRequest<{ success: boolean; data: Tag[] }>(`/api/tags/auto-tag/${contactId}`, {
     method: 'POST',
     body: JSON.stringify({ ...contactData, min_confidence: minConfidence }),
+  })
+  return result.data
+}
+
+// =============================================================================
+// STAFF & ROLES
+// =============================================================================
+
+export interface Role {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  color?: string
+  permissions: string[]
+  is_active: boolean
+  is_system: boolean
+  created_at: number
+  updated_at: number
+}
+
+export interface Staff {
+  id: string
+  email: string
+  first_name: string
+  last_name: string
+  phone?: string
+  role_id: string
+  role?: Role
+  avatar_url?: string
+  bio?: string
+  specialties: string[]
+  availability: Record<string, string>
+  is_active: boolean
+  can_be_assigned: boolean
+  workload_capacity: number
+  current_workload: number
+  hire_date?: number
+  created_at: number
+  updated_at: number
+}
+
+export interface StaffAssignment {
+  id: string
+  contact_id: string
+  staff_id: string
+  staff?: Staff
+  assignment_type: 'primary' | 'secondary' | 'consultant' | 'specialist' | 'support'
+  assigned_by?: string
+  assigned_at: number
+  notes?: string
+  is_active: boolean
+  created_at: number
+}
+
+export interface CreateRoleInput {
+  name: string
+  slug: string
+  description?: string
+  color?: string
+  permissions: string[]
+}
+
+export interface UpdateRoleInput {
+  name?: string
+  description?: string
+  color?: string
+  permissions?: string[]
+  is_active?: boolean
+}
+
+export interface CreateStaffInput {
+  email: string
+  first_name: string
+  last_name: string
+  phone?: string
+  role_id: string
+  avatar_url?: string
+  bio?: string
+  specialties?: string[]
+  availability?: Record<string, string>
+  workload_capacity?: number
+  hire_date?: number
+}
+
+export interface UpdateStaffInput {
+  email?: string
+  first_name?: string
+  last_name?: string
+  phone?: string
+  role_id?: string
+  avatar_url?: string
+  bio?: string
+  specialties?: string[]
+  availability?: Record<string, string>
+  is_active?: boolean
+  can_be_assigned?: boolean
+  workload_capacity?: number
+}
+
+export interface AssignStaffInput {
+  contact_id: string
+  staff_id: string
+  assignment_type: StaffAssignment['assignment_type']
+  assigned_by?: string
+  notes?: string
+}
+
+export interface AIStaffSuggestion {
+  staff_id: string
+  staff_name: string
+  role: string
+  confidence: number
+  reasoning: string
+  estimated_workload: number
+  specialties_match: string[]
+}
+
+// Roles
+export async function getRoles(includeInactive = false): Promise<Role[]> {
+  const params = new URLSearchParams()
+  if (includeInactive) params.set('include_inactive', 'true')
+  const query = params.toString()
+  return apiRequest(`/api/roles${query ? `?${query}` : ''}`)
+}
+
+export async function getRole(id: string): Promise<Role> {
+  return apiRequest(`/api/roles/${id}`)
+}
+
+export async function createRole(data: CreateRoleInput): Promise<Role> {
+  return apiRequest('/api/roles', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateRole(id: string, data: UpdateRoleInput): Promise<Role> {
+  return apiRequest(`/api/roles/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteRole(id: string): Promise<void> {
+  await apiRequest(`/api/roles/${id}`, { method: 'DELETE' })
+}
+
+// Staff
+export async function getStaff(options?: {
+  includeInactive?: boolean
+  roleId?: string
+  canBeAssigned?: boolean
+}): Promise<Staff[]> {
+  const params = new URLSearchParams()
+  if (options?.includeInactive) params.set('include_inactive', 'true')
+  if (options?.roleId) params.set('role_id', options.roleId)
+  if (options?.canBeAssigned !== undefined) params.set('can_be_assigned', String(options.canBeAssigned))
+  const query = params.toString()
+  return apiRequest(`/api/staff${query ? `?${query}` : ''}`)
+}
+
+export async function getStaffMember(id: string): Promise<Staff> {
+  return apiRequest(`/api/staff/${id}`)
+}
+
+export async function createStaff(data: CreateStaffInput): Promise<Staff> {
+  return apiRequest('/api/staff', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateStaff(id: string, data: UpdateStaffInput): Promise<Staff> {
+  return apiRequest(`/api/staff/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteStaff(id: string): Promise<void> {
+  await apiRequest(`/api/staff/${id}`, { method: 'DELETE' })
+}
+
+// Staff Assignments
+export async function getContactStaffAssignments(contactId: string): Promise<StaffAssignment[]> {
+  return apiRequest(`/api/staff/assignments/contact/${contactId}`)
+}
+
+export async function getStaffAssignments(staffId: string): Promise<StaffAssignment[]> {
+  return apiRequest(`/api/staff/assignments/staff/${staffId}`)
+}
+
+export async function assignStaff(data: AssignStaffInput): Promise<StaffAssignment> {
+  return apiRequest('/api/staff/assignments', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function unassignStaff(contactId: string, staffId: string): Promise<void> {
+  await apiRequest(`/api/staff/assignments/${contactId}/${staffId}`, { method: 'DELETE' })
+}
+
+// AI Staff Suggestions
+export async function suggestStaff(
+  contactData: {
+    name: string
+    current_pipeline?: string
+    current_stage?: string
+    source?: string
+    data?: Record<string, any>
+  },
+  assignmentType: StaffAssignment['assignment_type'] = 'primary'
+): Promise<AIStaffSuggestion[]> {
+  return apiRequest('/api/staff/suggest', {
+    method: 'POST',
+    body: JSON.stringify({ contactData, assignmentType }),
+  })
+}
+
+// =============================================================================
+// TEMPLATES
+// =============================================================================
+
+export interface Template {
+  id: string
+  tenant_id: string
+  name: string
+  description?: string
+  category: 'email' | 'sms' | 'social' | 'ai_context' | 'notification'
+  subject?: string
+  body: string
+  ai_system_prompt?: string
+  ai_temperature?: number
+  ai_max_tokens?: number
+  variables?: string[]
+  quick_button_label?: string
+  quick_button_icon?: string
+  tags?: string[]
+  is_default: boolean
+  is_active: boolean
+  created_at: number
+  updated_at: number
+  created_by: string
+  last_used_at?: number
+  use_count: number
+}
+
+export interface CreateTemplateInput {
+  name: string
+  description?: string
+  category: 'email' | 'sms' | 'social' | 'ai_context' | 'notification'
+  subject?: string
+  body: string
+  ai_system_prompt?: string
+  ai_temperature?: number
+  ai_max_tokens?: number
+  variables?: string[]
+  quick_button_label?: string
+  quick_button_icon?: string
+  tags?: string[]
+  is_default?: boolean
+}
+
+export interface UpdateTemplateInput {
+  name?: string
+  description?: string
+  category?: 'email' | 'sms' | 'social' | 'ai_context' | 'notification'
+  subject?: string
+  body?: string
+  ai_system_prompt?: string
+  ai_temperature?: number
+  ai_max_tokens?: number
+  variables?: string[]
+  quick_button_label?: string
+  quick_button_icon?: string
+  tags?: string[]
+  is_default?: boolean
+}
+
+export interface RenderTemplateResult {
+  subject?: string
+  body: string
+  missing_variables: string[]
+}
+
+export async function getTemplates(filters?: {
+  category?: string
+  active_only?: boolean
+  with_quick_buttons?: boolean
+  search?: string
+}): Promise<Template[]> {
+  const params = new URLSearchParams()
+  if (filters?.category) params.set('category', filters.category)
+  if (filters?.active_only) params.set('active_only', 'true')
+  if (filters?.with_quick_buttons) params.set('with_quick_buttons', 'true')
+  if (filters?.search) params.set('search', filters.search)
+
+  const query = params.toString()
+  const result = await apiRequest<{ success: boolean; data: Template[] }>(
+    `/api/templates${query ? `?${query}` : ''}`
+  )
+  return result.data
+}
+
+export async function getTemplate(id: string): Promise<Template> {
+  const result = await apiRequest<{ success: boolean; data: Template }>(`/api/templates/${id}`)
+  return result.data
+}
+
+export async function getDefaultTemplate(category: string): Promise<Template> {
+  const result = await apiRequest<{ success: boolean; data: Template }>(
+    `/api/templates/default/${category}`
+  )
+  return result.data
+}
+
+export async function getQuickActionTemplates(category?: string): Promise<Template[]> {
+  const params = new URLSearchParams()
+  if (category) params.set('category', category)
+
+  const query = params.toString()
+  const result = await apiRequest<{ success: boolean; data: Template[] }>(
+    `/api/templates/quick-actions${query ? `?${query}` : ''}`
+  )
+  return result.data
+}
+
+export async function createTemplate(data: CreateTemplateInput): Promise<Template> {
+  const result = await apiRequest<{ success: boolean; data: Template }>('/api/templates', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  return result.data
+}
+
+export async function updateTemplate(id: string, data: UpdateTemplateInput): Promise<Template> {
+  const result = await apiRequest<{ success: boolean; data: Template }>(`/api/templates/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  return result.data
+}
+
+export async function deleteTemplate(id: string): Promise<void> {
+  await apiRequest(`/api/templates/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function renderTemplate(
+  templateId: string,
+  variables: Record<string, string>
+): Promise<RenderTemplateResult> {
+  const result = await apiRequest<{ success: boolean; data: RenderTemplateResult }>(
+    `/api/templates/${templateId}/render`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ variables }),
+    }
+  )
+  return result.data
+}
+
+export async function executeAITemplate(
+  templateId: string,
+  variables: Record<string, string>
+): Promise<string> {
+  const result = await apiRequest<{ success: boolean; data: { result: string } }>(
+    `/api/templates/${templateId}/execute`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ variables }),
+    }
+  )
+  return result.data.result
+}
+
+export async function duplicateTemplate(templateId: string, newName: string): Promise<Template> {
+  const result = await apiRequest<{ success: boolean; data: Template }>(
+    `/api/templates/${templateId}/duplicate`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ new_name: newName }),
+    }
+  )
+  return result.data
+}
+
+// =============================================================================
+// BOOKING DRAFTS (AI Assistant)
+// =============================================================================
+
+export interface BookingDraft {
+  id: string
+  tenant_id: string
+  original_booking_id?: string
+  contact_id: string
+  contact_name: string
+  contact_phone?: string
+  contact_email?: string
+  action_type: 'create' | 'reschedule' | 'cancel'
+  proposed_date?: number
+  proposed_time?: string
+  service_type?: string
+  staff_id?: string
+  duration_minutes: number
+  ai_confidence: number
+  ai_reasoning: string
+  source_message: string
+  source_channel: string
+  detected_intent: string
+  detected_entities?: Record<string, any>
+  availability_checked: boolean
+  is_available: boolean
+  alternative_slots?: Array<{ date: number; time: string }>
+  status: 'pending' | 'approved' | 'rejected' | 'applied'
+  reviewed_by?: string
+  reviewed_at?: number
+  review_notes?: string
+  created_at: number
+  created_by: string
+  applied_at?: number
+}
+
+export async function getBookingDrafts(): Promise<BookingDraft[]> {
+  const result = await apiRequest<{ success: boolean; data: BookingDraft[] }>('/api/booking-drafts')
+  return result.data || []
+}
+
+export async function approveDraft(draftId: string): Promise<void> {
+  await apiRequest(`/api/booking-drafts/${draftId}/approve`, {
+    method: 'POST',
+  })
+}
+
+export async function rejectDraft(draftId: string, notes?: string): Promise<void> {
+  await apiRequest(`/api/booking-drafts/${draftId}/reject`, {
+    method: 'POST',
+    body: JSON.stringify({ notes }),
+  })
+}
+
+// ==================== User Preferences ====================
+
+export interface UserPreferences {
+  id: string
+  tenant_id: string
+  user_id: string
+
+  // UI Preferences
+  theme?: 'light' | 'dark' | 'auto'
+  sidebar_collapsed?: boolean
+  default_view?: string
+
+  // AI Assistant Preferences
+  ai_window_position?: { x: number; y: number }
+  ai_window_size?: { width: number; height: number }
+  ai_window_docked?: boolean
+  ai_quick_access_enabled?: boolean
+  ai_auto_suggestions?: boolean
+  ai_temperature?: number
+  ai_context_length?: 'short' | 'medium' | 'long'
+
+  // Notifications Preferences
+  desktop_notifications?: boolean
+  email_notifications?: boolean
+  sms_notifications?: boolean
+  notification_sound?: boolean
+  notification_types?: string[]
+
+  // Dashboard Preferences
+  dashboard_widgets?: any[]
+  dashboard_layout?: 'grid' | 'list' | 'compact'
+
+  // Contact/Pipeline Preferences
+  default_pipeline_id?: string
+  default_contact_view?: 'card' | 'table' | 'kanban'
+  contacts_per_page?: number
+  show_archived_contacts?: boolean
+
+  // Calendar Preferences
+  calendar_view?: 'day' | 'week' | 'month' | 'agenda'
+  calendar_start_time?: string
+  calendar_end_time?: string
+  calendar_slot_duration?: number
+  calendar_show_weekends?: boolean
+
+  // Messages Preferences
+  message_preview?: boolean
+  message_group_by?: 'contact' | 'channel' | 'date'
+  message_auto_archive?: boolean
+
+  // Table/List Preferences
+  visible_columns?: Record<string, string[]>
+  column_order?: Record<string, string[]>
+  sort_preferences?: Record<string, { field: string; direction: 'asc' | 'desc' }>
+
+  // Keyboard Shortcuts
+  keyboard_shortcuts_enabled?: boolean
+  custom_shortcuts?: Record<string, string>
+
+  // Language & Region
+  language?: string
+  timezone?: string
+  date_format?: string
+  time_format?: '12h' | '24h'
+  currency?: string
+
+  // Accessibility
+  high_contrast?: boolean
+  reduce_motion?: boolean
+  text_size?: 'small' | 'medium' | 'large' | 'x-large'
+  screen_reader_mode?: boolean
+
+  // Advanced
+  debug_mode?: boolean
+  beta_features?: boolean
+  analytics_enabled?: boolean
+
+  // Metadata
+  created_at: number
+  updated_at: number
+  last_synced_at?: number
+}
+
+export interface PreferenceHistory {
+  id: string
+  tenant_id: string
+  user_id: string
+  preference_key: string
+  old_value: string | null
+  new_value: string | null
+  changed_at: number
+  changed_from: 'user' | 'admin' | 'system'
+}
+
+export async function getPreferences(): Promise<UserPreferences> {
+  const result = await apiRequest<{ success: boolean; data: UserPreferences }>('/api/preferences')
+  return result.data
+}
+
+export async function updatePreferences(updates: Partial<UserPreferences>): Promise<UserPreferences> {
+  const result = await apiRequest<{ success: boolean; data: UserPreferences }>('/api/preferences', {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  })
+  return result.data
+}
+
+export async function resetPreferences(): Promise<UserPreferences> {
+  const result = await apiRequest<{ success: boolean; data: UserPreferences }>('/api/preferences/reset', {
+    method: 'POST',
+  })
+  return result.data
+}
+
+export async function getPreferenceHistory(): Promise<PreferenceHistory[]> {
+  const result = await apiRequest<{ success: boolean; data: PreferenceHistory[] }>('/api/preferences/history')
+  return result.data
+}
+
+export async function exportPreferences(): Promise<Blob> {
+  const response = await fetch('/api/preferences/export')
+  return await response.blob()
+}
+
+export async function importPreferences(preferencesJson: string): Promise<UserPreferences> {
+  const result = await apiRequest<{ success: boolean; data: UserPreferences }>('/api/preferences/import', {
+    method: 'POST',
+    body: preferencesJson,
   })
   return result.data
 }

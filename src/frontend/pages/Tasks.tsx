@@ -1,15 +1,19 @@
-import { useState } from 'react'
-import { Plus, List, LayoutGrid, Clock, AlertCircle, X } from 'lucide-react'
-import { useTasks, useUpdateTask, useCreateTask } from '../hooks/useAPI'
+import { useState, useRef, useEffect } from 'react'
+import { Plus, List, LayoutGrid, Clock, AlertCircle, X, MoreVertical, Edit, Trash2, CheckCircle, Flag, Filter } from 'lucide-react'
+import { useTasks, useUpdateTask, useCreateTask, useDeleteTask, useStaff } from '../hooks/useAPI'
 import { Task, CreateTaskInput } from '../lib/api'
-import { Button, Badge, Avatar, Card, CardContent } from '../components/ui'
+import { Button, Badge, Avatar, Card, CardContent, useConfirmDialog } from '../components/ui'
 import KanbanBoard, { KanbanColumn, KanbanCard } from '../components/kanban/KanbanBoard'
 import { formatRelativeTime, getPriorityColorClass } from '../lib/utils'
 
 export default function TasksPage() {
+  const { confirm, DialogComponent: ConfirmDialog } = useConfirmDialog()
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [taskFilter, setTaskFilter] = useState<'all' | 'my'>('my')
+  const [currentUserId] = useState('system') // TODO: Get from auth context
   const { data: tasks, isLoading, refetch } = useTasks()
+  const { data: staffList } = useStaff()
   const updateTask = useUpdateTask()
   const createTask = useCreateTask()
   const [newTask, setNewTask] = useState<CreateTaskInput>({
@@ -18,6 +22,7 @@ export default function TasksPage() {
     title: '',
     description: '',
     priority: 'medium',
+    assigned_to: currentUserId,
   })
 
   const handleCreateTask = async (e: React.FormEvent) => {
@@ -31,6 +36,7 @@ export default function TasksPage() {
         title: '',
         description: '',
         priority: 'medium',
+        assigned_to: currentUserId,
       })
       refetch()
     } catch (error) {
@@ -38,15 +44,20 @@ export default function TasksPage() {
     }
   }
 
+  // Filter tasks based on selection
+  const filteredTasks = taskFilter === 'my'
+    ? tasks?.filter(t => t.assigned_to === currentUserId || !t.assigned_to)
+    : tasks
+
   // Group tasks by urgency for list view
-  const urgentTasks = tasks?.filter(t => t.priority === 'urgent' && t.status !== 'completed') || []
-  const todayTasks = tasks?.filter(t =>
+  const urgentTasks = filteredTasks?.filter(t => t.priority === 'urgent' && t.status !== 'completed') || []
+  const todayTasks = filteredTasks?.filter(t =>
     t.priority === 'high' &&
     t.status !== 'completed' &&
     t.due_date &&
     new Date(t.due_date).toDateString() === new Date().toDateString()
   ) || []
-  const thisWeekTasks = tasks?.filter(t =>
+  const thisWeekTasks = filteredTasks?.filter(t =>
     t.status !== 'completed' &&
     !urgentTasks.includes(t) &&
     !todayTasks.includes(t)
@@ -58,19 +69,19 @@ export default function TasksPage() {
       id: 'pending',
       title: 'To Do',
       color: 'bg-gray-500',
-      cards: tasks?.filter(t => t.status === 'pending').map(taskToKanbanCard) || [],
+      cards: filteredTasks?.filter(t => t.status === 'pending').map(taskToKanbanCard) || [],
     },
     {
       id: 'in_progress',
       title: 'In Progress',
       color: 'bg-primary-500',
-      cards: tasks?.filter(t => t.status === 'in_progress').map(taskToKanbanCard) || [],
+      cards: filteredTasks?.filter(t => t.status === 'in_progress').map(taskToKanbanCard) || [],
     },
     {
       id: 'completed',
       title: 'Completed',
       color: 'bg-success-500',
-      cards: tasks?.filter(t => t.status === 'completed').map(taskToKanbanCard) || [],
+      cards: filteredTasks?.filter(t => t.status === 'completed').map(taskToKanbanCard) || [],
     },
   ]
 
@@ -111,10 +122,32 @@ export default function TasksPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
           <p className="text-sm text-gray-500 mt-1">
-            {tasks?.length || 0} total tasks • {urgentTasks.length} urgent
+            {filteredTasks?.length || 0} {taskFilter === 'my' ? 'my' : 'total'} tasks • {urgentTasks.length} urgent
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Task Filter Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setTaskFilter('my')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                taskFilter === 'my' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              My Tasks
+            </button>
+            <button
+              onClick={() => setTaskFilter('all')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                taskFilter === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+              }`}
+            >
+              All Tasks
+            </button>
+          </div>
+
+          {/* View Mode Toggle */}
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setViewMode('list')}
@@ -295,6 +328,28 @@ export default function TasksPage() {
                   </select>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Assign To
+                  </label>
+                  <select
+                    value={newTask.assigned_to || ''}
+                    onChange={(e) => setNewTask({ ...newTask, assigned_to: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Unassigned</option>
+                    <option value="system">System (Me)</option>
+                    <option value="ai_assistant">🤖 AI Assistant</option>
+                    <optgroup label="Staff Members">
+                      {staffList?.filter(s => s.is_active).map((staff) => (
+                        <option key={staff.id} value={staff.id}>
+                          {staff.first_name} {staff.last_name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+
                 <div className="flex gap-3 pt-4">
                   <Button
                     type="button"
@@ -313,13 +368,65 @@ export default function TasksPage() {
           </div>
         </>
       )}
+
+      <ConfirmDialog />
     </div>
   )
 }
 
 function TaskCard({ task, onComplete }: { task: Task; onComplete: (id: string) => void }) {
+  const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const updateTask = useUpdateTask()
+  const deleteTask = useDeleteTask()
+  const { confirm, DialogComponent: ConfirmDialog } = useConfirmDialog()
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showDropdown])
+
+  const handleStatusChange = async (status: string) => {
+    await updateTask.mutateAsync({
+      id: task.id,
+      data: { status: status as any },
+    })
+    setShowDropdown(false)
+  }
+
+  const handlePriorityChange = async (priority: string) => {
+    await updateTask.mutateAsync({
+      id: task.id,
+      data: { priority: priority as any },
+    })
+    setShowDropdown(false)
+  }
+
+  const handleDelete = async () => {
+    const confirmed = await confirm({
+      title: 'Delete Task',
+      message: 'Are you sure you want to delete this task? This action cannot be undone.',
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    })
+
+    if (confirmed) {
+      await deleteTask.mutateAsync(task.id)
+      setShowDropdown(false)
+    }
+  }
+
   return (
-    <Card hover className="cursor-pointer">
+    <Card hover className="cursor-pointer relative">
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
@@ -334,6 +441,16 @@ function TaskCard({ task, onComplete }: { task: Task; onComplete: (id: string) =
                 size="sm"
               >
                 {task.priority}
+              </Badge>
+              <Badge
+                variant={
+                  task.status === 'completed' ? 'success' :
+                  task.status === 'in_progress' ? 'primary' :
+                  'default'
+                }
+                size="sm"
+              >
+                {task.status.replace('_', ' ')}
               </Badge>
             </div>
             {task.description && (
@@ -352,20 +469,124 @@ function TaskCard({ task, onComplete }: { task: Task; onComplete: (id: string) =
               )}
             </div>
           </div>
-          {task.status !== 'completed' && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={(e) => {
-                e.stopPropagation()
-                onComplete(task.id)
-              }}
-            >
-              Complete
-            </Button>
-          )}
+
+          <div className="flex items-center gap-2">
+            {task.status !== 'completed' && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onComplete(task.id)
+                }}
+              >
+                Complete
+              </Button>
+            )}
+
+            {/* Dropdown Menu */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowDropdown(!showDropdown)
+                }}
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+              >
+                <MoreVertical className="w-5 h-5 text-gray-600" />
+              </button>
+
+              {showDropdown && (
+                <div className="absolute right-0 top-8 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  {/* Status Section */}
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Status
+                  </div>
+                  <button
+                    onClick={() => handleStatusChange('pending')}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    Pending
+                  </button>
+                  <button
+                    onClick={() => handleStatusChange('in_progress')}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <AlertCircle className="w-4 h-4 text-blue-500" />
+                    In Progress
+                  </button>
+                  <button
+                    onClick={() => handleStatusChange('completed')}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    Completed
+                  </button>
+
+                  <div className="border-t border-gray-100 my-1"></div>
+
+                  {/* Priority Section */}
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Priority
+                  </div>
+                  <button
+                    onClick={() => handlePriorityChange('low')}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Flag className="w-4 h-4 text-gray-400" />
+                    Low
+                  </button>
+                  <button
+                    onClick={() => handlePriorityChange('medium')}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Flag className="w-4 h-4 text-blue-500" />
+                    Medium
+                  </button>
+                  <button
+                    onClick={() => handlePriorityChange('high')}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Flag className="w-4 h-4 text-yellow-500" />
+                    High
+                  </button>
+                  <button
+                    onClick={() => handlePriorityChange('urgent')}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Flag className="w-4 h-4 text-red-500" />
+                    Urgent
+                  </button>
+
+                  <div className="border-t border-gray-100 my-1"></div>
+
+                  {/* Actions */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowDropdown(false)
+                      // TODO: Implement edit functionality
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Edit className="w-4 h-4 text-gray-600" />
+                    Edit Task
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Task
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </CardContent>
+      <ConfirmDialog />
     </Card>
   )
 }
