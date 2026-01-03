@@ -167,12 +167,6 @@ function BookingFlow() {
           )}
         </div>
       </div>
-
-      {/* Footer */}
-      <div className="max-w-4xl mx-auto px-4 py-8 text-center text-gray-600 text-sm">
-        <p>© {new Date().getFullYear()} Avatar Imaging. All rights reserved.</p>
-        <p className="mt-2">Secure payments powered by Stripe</p>
-      </div>
     </div>
   )
 }
