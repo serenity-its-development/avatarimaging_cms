@@ -10,6 +10,9 @@ import Messages from './pages/Messages'
 import BookingDrafts from './pages/BookingDrafts'
 import Templates from './pages/Templates'
 import Staff from './pages/Staff'
+import Procedures from './pages/Procedures'
+import DiscountCodes from './pages/DiscountCodes'
+import Influencers from './pages/Influencers'
 import Reports from './pages/Reports'
 import AIInsights from './pages/AIInsights'
 import Settings from './pages/Settings'
@@ -62,6 +65,9 @@ function AppContent() {
           <Route path="/ai-assistant" element={<BookingDrafts />} />
           <Route path="/templates" element={<Templates />} />
           <Route path="/staff" element={<Staff />} />
+          <Route path="/procedures" element={<Procedures />} />
+          <Route path="/discount-codes" element={<DiscountCodes />} />
+          <Route path="/influencers" element={<Influencers />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/ai-insights" element={<AIInsights />} />
           <Route path="/settings" element={<Settings />} />

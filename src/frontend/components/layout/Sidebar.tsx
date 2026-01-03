@@ -12,7 +12,11 @@ import {
   BarChart3,
   UserCog,
   FileText,
-  Brain
+  Brain,
+  Stethoscope,
+  Tag,
+  UserPlus,
+  DollarSign
 } from 'lucide-react'
 import { useBookingDrafts } from '../../hooks/useAPI'
 
@@ -26,6 +30,9 @@ const navigation = [
   { name: 'AI Assistant', href: '/ai-assistant', icon: Brain, highlight: true },
   { name: 'Templates', href: '/templates', icon: FileText },
   { name: 'Staff', href: '/staff', icon: UserCog },
+  { name: 'Procedures', href: '/procedures', icon: Stethoscope },
+  { name: 'Discount Codes', href: '/discount-codes', icon: Tag },
+  { name: 'Influencers', href: '/influencers', icon: UserPlus },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
   { name: 'AI Insights', href: '/ai-insights', icon: Sparkles },
 ]
