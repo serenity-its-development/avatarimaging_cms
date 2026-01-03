@@ -856,7 +856,16 @@ export function useCreateProcedure() {
 
   return useMutation({
     mutationFn: api.createProcedure,
-    onSuccess: () => {
+    onSuccess: (newProcedure) => {
+      // Optimistically update the cache with the new procedure
+      queryClient.setQueryData(['procedures', true], (old: any) => {
+        if (!old) return { success: true, data: [newProcedure] }
+        return {
+          ...old,
+          data: [...(old.data || []), newProcedure]
+        }
+      })
+      // Also invalidate to ensure we get fresh data
       queryClient.invalidateQueries({ queryKey: ['procedures'] })
     },
   })
@@ -916,7 +925,15 @@ export function useCreateDiscountCode() {
 
   return useMutation({
     mutationFn: api.createDiscountCode,
-    onSuccess: () => {
+    onSuccess: (newCode) => {
+      // Optimistically update the cache
+      queryClient.setQueryData(['discount-codes', true], (old: any) => {
+        if (!old) return { success: true, data: [newCode] }
+        return {
+          ...old,
+          data: [...(old.data || []), newCode]
+        }
+      })
       queryClient.invalidateQueries({ queryKey: ['discount-codes'] })
     },
   })
@@ -984,7 +1001,15 @@ export function useCreateInfluencer() {
 
   return useMutation({
     mutationFn: api.createInfluencer,
-    onSuccess: () => {
+    onSuccess: (newInfluencer) => {
+      // Optimistically update the cache
+      queryClient.setQueryData(['influencers', true], (old: any) => {
+        if (!old) return { success: true, data: [newInfluencer] }
+        return {
+          ...old,
+          data: [...(old.data || []), newInfluencer]
+        }
+      })
       queryClient.invalidateQueries({ queryKey: ['influencers'] })
     },
   })
