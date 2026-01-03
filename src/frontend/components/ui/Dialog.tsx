@@ -182,6 +182,3 @@ export function useAlertDialog() {
 
   return { alert, DialogComponent }
 }
-
-// Add React import
-import * as React from 'react'
