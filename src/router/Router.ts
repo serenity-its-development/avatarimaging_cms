@@ -149,6 +149,11 @@ export class Router {
         return await this.handlePreferencesRoutes(request, path, method, corsHeaders)
       }
 
+      // Procedures, Discount Codes, Influencers, Payments routes
+      if (path.startsWith('/api/procedures') || path.startsWith('/api/discount-codes') || path.startsWith('/api/influencers') || path.startsWith('/api/payments')) {
+        return await this.handleTemplateRoutes(request, path, method, corsHeaders)
+      }
+
       // Webhook routes
       if (path.startsWith('/webhooks')) {
         return await this.handleWebhooks(request, path, method, corsHeaders)
@@ -1299,6 +1304,7 @@ export class Router {
 
     // GET /api/procedures - List all procedures
     if (path === '/api/procedures' && method === 'GET') {
+      const url = new URL(request.url)
       const activeOnly = url.searchParams.get('active_only') !== 'false'
       const procedures = await this.services.procedures.list(context.tenant_id, activeOnly)
       return this.jsonResponse({ success: true, data: procedures }, 200, corsHeaders)
@@ -1362,6 +1368,7 @@ export class Router {
 
     // GET /api/discount-codes - List all discount codes
     if (path === '/api/discount-codes' && method === 'GET') {
+      const url = new URL(request.url)
       const activeOnly = url.searchParams.get('active_only') !== 'false'
       const discountCodes = await this.services.discountCodes.list(context.tenant_id, activeOnly)
       return this.jsonResponse({ success: true, data: discountCodes }, 200, corsHeaders)
@@ -1432,6 +1439,7 @@ export class Router {
 
     // GET /api/influencers - List all influencers
     if (path === '/api/influencers' && method === 'GET') {
+      const url = new URL(request.url)
       const activeOnly = url.searchParams.get('active_only') !== 'false'
       const influencers = await this.services.influencers.list(context.tenant_id, activeOnly)
       return this.jsonResponse({ success: true, data: influencers }, 200, corsHeaders)
@@ -1560,6 +1568,7 @@ export class Router {
 
     // GET /api/payments/revenue-summary - Get revenue summary
     if (path === '/api/payments/revenue-summary' && method === 'GET') {
+      const url = new URL(request.url)
       const startDate = url.searchParams.get('start_date')
       const endDate = url.searchParams.get('end_date')
 

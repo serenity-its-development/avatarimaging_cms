@@ -15,7 +15,7 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 routes = [
   { pattern = "crm.avatarimaging.com.au/*", zone_name = "avatarimaging.com.au" },
-  { pattern = "book.avatarimaging.com.au/*", zone_name = "avatarimaging.com.au" }
+  { pattern = "booking.avatarimaging.com.au/*", zone_name = "avatarimaging.com.au" }
 ]
 
 # Serve frontend static assets (Modern approach - 2025)
