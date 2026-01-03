@@ -71,18 +71,17 @@ export class ProcedureService {
       ? `SELECT * FROM procedures WHERE tenant_id = ? AND is_active = 1 ORDER BY category, name`
       : `SELECT * FROM procedures WHERE tenant_id = ? ORDER BY category, name`
 
-    const result = await this.db.raw(query, [tenantId])
-    const rows = result.results || []
+    // db.raw() already extracts result.results and returns the array directly
+    const rows = await this.db.raw(query, [tenantId])
     return rows.map(row => this.parseProcedure(row))
   }
 
   async getById(tenantId: string, procedureId: string): Promise<Procedure | null> {
-    const result = await this.db.raw(
+    const rows = await this.db.raw(
       `SELECT * FROM procedures WHERE tenant_id = ? AND id = ?`,
       [tenantId, procedureId]
     )
 
-    const rows = result.results || []
     return rows.length > 0 ? this.parseProcedure(rows[0]) : null
   }
 

@@ -143,32 +143,32 @@ export class PaymentService {
   }
 
   async getById(tenantId: string, paymentId: string): Promise<Payment | null> {
-    const result = await this.db.raw(
+    const rows = await this.db.raw(
       `SELECT * FROM payments WHERE tenant_id = ? AND id = ?`,
       [tenantId, paymentId]
     )
 
-    const rows = result.results || []
+    // db.raw() already returns array directly
     return rows.length > 0 ? this.parsePayment(rows[0]) : null
   }
 
   async getByBookingId(tenantId: string, bookingId: string): Promise<Payment[]> {
-    const result = await this.db.raw(
+    const rows = await this.db.raw(
       `SELECT * FROM payments WHERE tenant_id = ? AND booking_id = ? ORDER BY created_at DESC`,
       [tenantId, bookingId]
     )
 
-    const rows = result.results || []
+    // db.raw() already returns array directly
     return rows.map(row => this.parsePayment(row))
   }
 
   async getByContactId(tenantId: string, contactId: string): Promise<Payment[]> {
-    const result = await this.db.raw(
+    const rows = await this.db.raw(
       `SELECT * FROM payments WHERE tenant_id = ? AND contact_id = ? ORDER BY created_at DESC`,
       [tenantId, contactId]
     )
 
-    const rows = result.results || []
+    // db.raw() already returns array directly
     return rows.map(row => this.parsePayment(row))
   }
 
@@ -188,12 +188,12 @@ export class PaymentService {
     )
 
     // Get the updated payment
-    const result = await this.db.raw(
+    const rows = await this.db.raw(
       `SELECT * FROM payments WHERE tenant_id = ? AND stripe_payment_intent_id = ?`,
       [tenantId, stripePaymentIntentId]
     )
 
-    const rows = result.results || []
+    // db.raw() already returns array directly
     if (rows.length === 0) {
       return null
     }
@@ -323,7 +323,7 @@ export class PaymentService {
   }
 
   async listByInfluencer(tenantId: string, influencerId: string, limit: number = 50): Promise<Payment[]> {
-    const result = await this.db.raw(
+    const rows = await this.db.raw(
       `SELECT * FROM payments
        WHERE tenant_id = ? AND influencer_id = ? AND status = 'succeeded'
        ORDER BY created_at DESC
@@ -331,7 +331,7 @@ export class PaymentService {
       [tenantId, influencerId, limit]
     )
 
-    const rows = result.results || []
+    // db.raw() already returns array directly
     return rows.map(row => this.parsePayment(row))
   }
 
@@ -358,8 +358,8 @@ export class PaymentService {
       params.push(endDate)
     }
 
-    const result = await this.db.raw(query, params)
-    const rows = result.results || []
+    const rows = await this.db.raw(query, params)
+    // db.raw() already returns array directly
     return rows.length > 0 ? rows[0] : {
       total_payments: 0,
       total_revenue: 0,

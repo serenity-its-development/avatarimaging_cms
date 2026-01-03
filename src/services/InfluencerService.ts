@@ -80,18 +80,16 @@ export class InfluencerService {
       ? `SELECT * FROM influencers WHERE tenant_id = ? AND is_active = 1 ORDER BY name`
       : `SELECT * FROM influencers WHERE tenant_id = ? ORDER BY name`
 
-    const result = await this.db.raw(query, [tenantId])
-    const rows = result.results || []
+    const rows = await this.db.raw(query, [tenantId])
     return rows.map(row => this.parseInfluencer(row))
   }
 
   async getById(tenantId: string, influencerId: string): Promise<Influencer | null> {
-    const result = await this.db.raw(
+    const rows = await this.db.raw(
       `SELECT * FROM influencers WHERE tenant_id = ? AND id = ?`,
       [tenantId, influencerId]
     )
 
-    const rows = result.results || []
     return rows.length > 0 ? this.parseInfluencer(rows[0]) : null
   }
 
@@ -209,7 +207,7 @@ export class InfluencerService {
     }
 
     // Get total referrals and revenue from payments
-    const statsResult = await this.db.raw(
+    const statsRows = await this.db.raw(
       `SELECT
         COUNT(*) as total_referrals,
         COALESCE(SUM(amount), 0) as total_revenue,
@@ -219,20 +217,18 @@ export class InfluencerService {
       [influencerId]
     )
 
-    const statsRows = statsResult.results || []
     const stats = statsRows.length > 0 ? statsRows[0] : { total_referrals: 0, total_revenue: 0, total_discount: 0 }
 
     // Get count of discount codes
-    const codesResult = await this.db.raw(
+    const codesRows = await this.db.raw(
       `SELECT COUNT(*) as count FROM discount_codes WHERE influencer_id = ? AND is_active = 1`,
       [influencerId]
     )
 
-    const codesRows = codesResult.results || []
     const discountCodes = codesRows.length > 0 ? codesRows[0].count : 0
 
     // Get recent referrals
-    const referralsResult = await this.db.raw(
+    const recentReferrals = await this.db.raw(
       `SELECT p.*, c.name as contact_name, c.email as contact_email
        FROM payments p
        LEFT JOIN contacts c ON p.contact_id = c.id
@@ -241,8 +237,6 @@ export class InfluencerService {
        LIMIT 10`,
       [influencerId]
     )
-
-    const recentReferrals = referralsResult.results || []
 
     const totalCommission = (stats.total_revenue * influencer.commission_rate) / 100
 
@@ -258,7 +252,7 @@ export class InfluencerService {
 
   async updateStats(tenantId: string, influencerId: string): Promise<void> {
     // Recalculate and update total_referrals and total_revenue
-    const statsResult = await this.db.raw(
+    const statsRows = await this.db.raw(
       `SELECT
         COUNT(*) as total_referrals,
         COALESCE(SUM(amount), 0) as total_revenue
@@ -267,7 +261,6 @@ export class InfluencerService {
       [influencerId]
     )
 
-    const statsRows = statsResult.results || []
     const stats = statsRows.length > 0 ? statsRows[0] : { total_referrals: 0, total_revenue: 0 }
 
     await this.db.raw(

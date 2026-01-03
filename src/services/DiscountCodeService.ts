@@ -105,13 +105,13 @@ export class DiscountCodeService {
          WHERE dc.tenant_id = ?
          ORDER BY dc.created_at DESC`
 
-    const result = await this.db.raw(query, [tenantId])
-    const rows = result.results || []
+    const rows = await this.db.raw(query, [tenantId])
+    // db.raw() already returns array directly
     return rows.map(row => this.parseDiscountCode(row))
   }
 
   async getById(tenantId: string, discountId: string): Promise<DiscountCode | null> {
-    const result = await this.db.raw(
+    const rows = await this.db.raw(
       `SELECT dc.*, i.name as influencer_name
        FROM discount_codes dc
        LEFT JOIN influencers i ON dc.influencer_id = i.id
@@ -119,12 +119,12 @@ export class DiscountCodeService {
       [tenantId, discountId]
     )
 
-    const rows = result.results || []
+    // db.raw() already returns array directly
     return rows.length > 0 ? this.parseDiscountCode(rows[0]) : null
   }
 
   async getByCode(tenantId: string, code: string): Promise<DiscountCode | null> {
-    const result = await this.db.raw(
+    const rows = await this.db.raw(
       `SELECT dc.*, i.name as influencer_name
        FROM discount_codes dc
        LEFT JOIN influencers i ON dc.influencer_id = i.id
@@ -132,7 +132,7 @@ export class DiscountCodeService {
       [tenantId, code]
     )
 
-    const rows = result.results || []
+    // db.raw() already returns array directly
     return rows.length > 0 ? this.parseDiscountCode(rows[0]) : null
   }
 
@@ -314,11 +314,10 @@ export class DiscountCodeService {
 
     // Check per-customer limit
     if (contactId) {
-      const usageResult = await this.db.raw(
+      const usageRows = await this.db.raw(
         `SELECT COUNT(*) as count FROM payments WHERE contact_id = ? AND discount_code_id = ?`,
         [contactId, discount.id]
       )
-      const usageRows = usageResult.results || []
       const customerUsage = usageRows.length > 0 ? usageRows[0].count : 0
 
       if (customerUsage >= discount.per_customer_limit) {
