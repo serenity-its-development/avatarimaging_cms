@@ -17,6 +17,13 @@ NC='\033[0m' # No Color
 # Dry run mode
 DRY_RUN=false
 
+# Wrangler command (use npx if wrangler not in PATH)
+if command -v wrangler &> /dev/null; then
+    WRANGLER="wrangler"
+else
+    WRANGLER="npx wrangler"
+fi
+
 # Run or simulate a command based on dry-run mode
 run_cmd() {
     if [ "$DRY_RUN" = true ]; then
@@ -76,7 +83,7 @@ create_sandbox_config() {
         return 0
     fi
 
-    local db_output=$(wrangler d1 create "$db_name" 2>&1)
+    local db_output=$($WRANGLER d1 create "$db_name" 2>&1)
 
     # Extract database ID from output
     local db_id=$(echo "$db_output" | grep -oP 'database_id\s*=\s*"\K[^"]+' || echo "$db_output" | grep -oP '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
@@ -166,7 +173,7 @@ sync_from_prod() {
     fi
 
     echo -e "${BLUE}Exporting data from production database...${NC}"
-    wrangler d1 export "$prod_db" --output="$dump_file" -c wrangler.main.toml
+    $WRANGLER d1 export "$prod_db" --output="$dump_file" -c wrangler.main.toml
 
     if [ "$mode" = "incremental" ]; then
         echo -e "${YELLOW}Converting to incremental mode (INSERT OR IGNORE)...${NC}"
@@ -174,7 +181,7 @@ sync_from_prod() {
     fi
 
     echo -e "${BLUE}Importing data to sandbox database...${NC}"
-    wrangler d1 execute "$db_name" --file="$dump_file" -c "$config_file"
+    $WRANGLER d1 execute "$db_name" --file="$dump_file" -c "$config_file"
 
     # Cleanup
     rm -f "$dump_file"
@@ -269,7 +276,7 @@ main() {
         d1)
             # Pass through to wrangler with config
             shift
-            run_cmd wrangler d1 "$@" -c "$config_file"
+            run_cmd $WRANGLER d1 "$@" -c "$config_file"
 
             # If migrations were applied, prompt for data sync
             if [ "$1" = "migrations" ] && [ "$2" = "apply" ]; then
@@ -285,12 +292,12 @@ main() {
         deploy)
             shift
             echo -e "${GREEN}Deploying to: ${slug}${NC}"
-            run_cmd wrangler deploy "$@" -c "$config_file"
+            run_cmd $WRANGLER deploy "$@" -c "$config_file"
             ;;
 
         *)
             # Pass through any other command
-            run_cmd wrangler "$@" -c "$config_file"
+            run_cmd $WRANGLER "$@" -c "$config_file"
             ;;
     esac
 }
