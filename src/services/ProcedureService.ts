@@ -111,12 +111,23 @@ export class ProcedureService {
       ]
     )
 
-    const procedure = await this.getById(input.tenant_id, id)
-    if (!procedure) {
-      throw new Error('Failed to create procedure')
+    // Return the created procedure directly instead of fetching it back
+    // to avoid D1 consistency issues with immediate reads after writes
+    return {
+      id,
+      tenant_id: input.tenant_id,
+      name: input.name,
+      description: input.description,
+      duration_minutes: input.duration_minutes,
+      base_price: input.base_price,
+      category: input.category,
+      is_active: true,
+      requires_deposit: input.requires_deposit || false,
+      deposit_amount: input.deposit_amount || 0,
+      metadata: input.metadata,
+      created_at: now,
+      updated_at: now
     }
-
-    return procedure
   }
 
   async update(tenantId: string, procedureId: string, input: UpdateProcedureInput): Promise<Procedure> {

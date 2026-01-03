@@ -120,12 +120,23 @@ export class InfluencerService {
       ]
     )
 
-    const influencer = await this.getById(input.tenant_id, id)
-    if (!influencer) {
-      throw new Error('Failed to create influencer')
+    // Return created influencer directly to avoid D1 read-after-write consistency issues
+    return {
+      id,
+      tenant_id: input.tenant_id,
+      name: input.name,
+      email: input.email,
+      phone: input.phone,
+      platform: input.platform,
+      handle: input.handle,
+      commission_rate: input.commission_rate || 0,
+      total_referrals: 0,
+      total_revenue: 0,
+      is_active: true,
+      notes: input.notes,
+      created_at: now,
+      updated_at: now
     }
-
-    return influencer
   }
 
   async update(tenantId: string, influencerId: string, input: UpdateInfluencerInput): Promise<Influencer> {

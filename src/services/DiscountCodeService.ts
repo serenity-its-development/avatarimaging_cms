@@ -173,12 +173,27 @@ export class DiscountCodeService {
       ]
     )
 
-    const discount = await this.getById(input.tenant_id, id)
-    if (!discount) {
-      throw new Error('Failed to create discount code')
+    // Return created discount directly to avoid D1 read-after-write consistency issues
+    return {
+      id,
+      tenant_id: input.tenant_id,
+      code: input.code.toUpperCase(),
+      influencer_id: input.influencer_id,
+      discount_type: input.discount_type,
+      discount_value: input.discount_value,
+      min_purchase_amount: input.min_purchase_amount || 0,
+      max_discount_amount: input.max_discount_amount,
+      usage_limit: input.usage_limit,
+      usage_count: 0,
+      per_customer_limit: input.per_customer_limit || 1,
+      valid_from: input.valid_from,
+      valid_until: input.valid_until,
+      applicable_procedures: input.applicable_procedures,
+      is_active: true,
+      notes: input.notes,
+      created_at: now,
+      updated_at: now
     }
-
-    return discount
   }
 
   async update(tenantId: string, discountId: string, input: UpdateDiscountCodeInput): Promise<DiscountCode> {
