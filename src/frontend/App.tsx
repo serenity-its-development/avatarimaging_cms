@@ -84,6 +84,9 @@ function AppContent() {
 }
 
 function App() {
+  // Redirect to /book if on booking subdomain
+  const isBookingSubdomain = window.location.hostname.startsWith('booking.')
+
   return (
     <QueryClientProvider client={queryClient}>
       <PreferencesProvider>
@@ -92,6 +95,9 @@ function App() {
             {/* Public booking page - no layout */}
             <Route path="/book" element={<PublicBooking />} />
             <Route path="/public/book" element={<PublicBooking />} />
+
+            {/* Root route - redirect to /book if on booking subdomain, otherwise show dashboard */}
+            <Route path="/" element={isBookingSubdomain ? <PublicBooking /> : <AppContent />} />
 
             {/* All other routes with layout */}
             <Route path="*" element={<AppContent />} />
