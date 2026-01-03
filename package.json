@@ -28,6 +28,8 @@
   },
   "dependencies": {
     "@hono/zod-validator": "^0.4.1",
+    "@stripe/react-stripe-js": "^5.4.1",
+    "@stripe/stripe-js": "^8.6.0",
     "@tanstack/react-query": "^5.62.8",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
