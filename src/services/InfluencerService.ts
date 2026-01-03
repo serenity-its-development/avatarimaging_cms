@@ -3,7 +3,7 @@
  */
 
 import type { D1DatabaseGateway } from '../gateway/D1DatabaseGateway'
-import { generateId } from '../utils/id'
+import { ulid } from 'ulid'
 
 export interface Influencer {
   id: string
@@ -96,7 +96,7 @@ export class InfluencerService {
   }
 
   async create(input: CreateInfluencerInput): Promise<Influencer> {
-    const id = `inf_${generateId()}`
+    const id = `inf_${ulid()}`
     const now = Date.now()
 
     await this.db.raw(

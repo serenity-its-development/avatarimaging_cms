@@ -3,7 +3,7 @@
  */
 
 import type { D1DatabaseGateway } from '../gateway/D1DatabaseGateway'
-import { generateId } from '../utils/id'
+import { ulid } from 'ulid'
 
 export interface Procedure {
   id: string
@@ -87,7 +87,7 @@ export class ProcedureService {
   }
 
   async create(input: CreateProcedureInput): Promise<Procedure> {
-    const id = `proc_${generateId()}`
+    const id = `proc_${ulid()}`
     const now = Date.now()
 
     await this.db.raw(

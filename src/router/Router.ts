@@ -1324,13 +1324,21 @@ export class Router {
 
     // POST /api/procedures - Create new procedure
     if (path === '/api/procedures' && method === 'POST') {
-      const data = await request.json()
-      const procedure = await this.services.procedures.create({
-        ...data,
-        tenant_id: context.tenant_id
-      })
+      try {
+        const data = await request.json()
+        const procedure = await this.services.procedures.create({
+          ...data,
+          tenant_id: context.tenant_id
+        })
 
-      return this.jsonResponse({ success: true, data: procedure }, 201, corsHeaders)
+        return this.jsonResponse({ success: true, data: procedure }, 201, corsHeaders)
+      } catch (error) {
+        console.error('Create procedure error:', error)
+        return this.jsonResponse({
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to create procedure'
+        }, 400, corsHeaders)
+      }
     }
 
     // PUT /api/procedures/:id - Update procedure

@@ -3,7 +3,7 @@
  */
 
 import type { D1DatabaseGateway } from '../gateway/D1DatabaseGateway'
-import { generateId } from '../utils/id'
+import { ulid } from 'ulid'
 
 export interface DiscountCode {
   id: string
@@ -137,7 +137,7 @@ export class DiscountCodeService {
   }
 
   async create(input: CreateDiscountCodeInput): Promise<DiscountCode> {
-    const id = `disc_${generateId()}`
+    const id = `disc_${ulid()}`
     const now = Date.now()
 
     // Check if code already exists
