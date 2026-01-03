@@ -110,7 +110,7 @@ function BookingFlow() {
           )}
 
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-none flex items-center gap-2 text-red-700">
               <AlertCircle className="w-5 h-5" />
               {error}
             </div>
@@ -205,7 +205,7 @@ function ProcedureStep({ procedures, selected, onSelect }: {
                     key={proc.id}
                     onClick={() => onSelect(proc)}
                     className={`
-                      text-left p-4 rounded-lg border-2 transition-all hover:shadow-md
+                      text-left p-4 rounded-none border-2 transition-all hover:shadow-md
                       ${selected === proc.id ? 'border-[#BF9961] bg-amber-50' : 'border-gray-200 hover:border-amber-300'}
                     `}
                   >
@@ -326,14 +326,14 @@ function DateTimeStep({ procedureName, onSelect }: {
           <div className="flex justify-between items-center mb-4">
             <button
               onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
-              className="p-2 hover:bg-gray-100 rounded"
+              className="p-2 hover:bg-gray-100 rounded-none"
             >
               ‹
             </button>
             <h3 className="font-semibold">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
             <button
               onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
-              className="p-2 hover:bg-gray-100 rounded"
+              className="p-2 hover:bg-gray-100 rounded-none"
             >
               ›
             </button>
@@ -358,7 +358,7 @@ function DateTimeStep({ procedureName, onSelect }: {
                   onClick={() => handleDateSelect(date)}
                   disabled={isPast || !isCurrentMonth}
                   className={`
-                    aspect-square p-2 text-sm rounded transition-colors
+                    aspect-square p-2 text-sm rounded-none transition-colors
                     ${!isCurrentMonth ? 'text-gray-300' : ''}
                     ${isPast ? 'text-gray-300 cursor-not-allowed' : ''}
                     ${isSelected ? 'bg-[#BF9961] text-white font-bold' : ''}
@@ -389,7 +389,7 @@ function DateTimeStep({ procedureName, onSelect }: {
                   onClick={() => slot.available && setSelectedTime(slot.time)}
                   disabled={!slot.available}
                   className={`
-                    p-3 rounded border text-sm font-medium transition-colors
+                    p-3 rounded-none border text-sm font-medium transition-colors
                     ${!slot.available ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : ''}
                     ${slot.available && selectedTime === slot.time ? 'bg-[#BF9961] text-white border-[#BF9961]' : ''}
                     ${slot.available && selectedTime !== slot.time ? 'border-gray-300 hover:border-[#D4AB6E] hover:bg-amber-50' : ''}
@@ -408,7 +408,7 @@ function DateTimeStep({ procedureName, onSelect }: {
         <div className="mt-6 flex justify-end">
           <button
             onClick={handleConfirm}
-            className="px-6 py-3 bg-[#BF9961] text-white rounded-lg font-medium hover:bg-[#A67D4A] transition-colors"
+            className="px-6 py-3 bg-[#BF9961] text-white rounded-none font-medium hover:bg-[#A67D4A] transition-colors"
           >
             Continue to Your Details
           </button>
@@ -445,7 +445,7 @@ function ContactStep({ data, onChange, onNext }: {
               type="text"
               value={data.name}
               onChange={e => onChange({ name: e.target.value })}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-none focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
               required
             />
           </div>
@@ -461,7 +461,7 @@ function ContactStep({ data, onChange, onNext }: {
               type="email"
               value={data.email}
               onChange={e => onChange({ email: e.target.value })}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-none focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
               required
             />
           </div>
@@ -477,7 +477,7 @@ function ContactStep({ data, onChange, onNext }: {
               type="tel"
               value={data.phone}
               onChange={e => onChange({ phone: e.target.value })}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-none focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
               required
             />
           </div>
@@ -490,7 +490,7 @@ function ContactStep({ data, onChange, onNext }: {
           <textarea
             value={data.notes}
             onChange={e => onChange({ notes: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
+            className="w-full px-4 py-3 border border-gray-300 rounded-none focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
             rows={3}
             placeholder="Any additional information we should know..."
           />
@@ -499,7 +499,7 @@ function ContactStep({ data, onChange, onNext }: {
         <div className="flex justify-end pt-4">
           <button
             type="submit"
-            className="px-6 py-3 bg-[#BF9961] text-white rounded-lg font-medium hover:bg-[#A67D4A] transition-colors"
+            className="px-6 py-3 bg-[#BF9961] text-white rounded-none font-medium hover:bg-[#A67D4A] transition-colors"
           >
             Continue to Payment
           </button>
@@ -690,7 +690,7 @@ function PaymentStep({ bookingData, onUpdate, onSuccess, onError }: {
       <p className="text-gray-600 mb-6">Secure payment powered by Stripe</p>
 
       {/* Order Summary */}
-      <div className="bg-gray-50 rounded-lg p-4 mb-6">
+      <div className="bg-gray-50 rounded-none p-4 mb-6">
         <h3 className="font-semibold mb-3">Order Summary</h3>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
@@ -726,14 +726,14 @@ function PaymentStep({ bookingData, onUpdate, onSuccess, onError }: {
                 type="text"
                 value={discountCodeInput}
                 onChange={e => setDiscountCodeInput(e.target.value.toUpperCase())}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-none focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
                 placeholder="Enter code"
               />
             </div>
             <button
               onClick={handleApplyDiscount}
               disabled={validatingDiscount || !discountCodeInput.trim()}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-none hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {validatingDiscount ? 'Validating...' : 'Apply'}
             </button>
@@ -750,7 +750,7 @@ function PaymentStep({ bookingData, onUpdate, onSuccess, onError }: {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Card Details
           </label>
-          <div className="p-4 border border-gray-300 rounded-lg">
+          <div className="p-4 border border-gray-300 rounded-none">
             <CardElement options={{
               style: {
                 base: {
@@ -771,7 +771,7 @@ function PaymentStep({ bookingData, onUpdate, onSuccess, onError }: {
         <button
           type="submit"
           disabled={!stripe || processing}
-          className="w-full px-6 py-4 bg-[#BF9961] text-white rounded-lg font-medium hover:bg-[#A67D4A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full px-6 py-4 bg-[#BF9961] text-white rounded-none font-medium hover:bg-[#A67D4A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {processing ? (
             <>
@@ -807,7 +807,7 @@ function ConfirmationStep({ bookingData }: { bookingData: BookingData }) {
         Thank you, {bookingData.name}. Your appointment has been confirmed.
       </p>
 
-      <div className="bg-gray-50 rounded-lg p-6 max-w-md mx-auto text-left mb-8">
+      <div className="bg-gray-50 rounded-none p-6 max-w-md mx-auto text-left mb-8">
         <h3 className="font-semibold mb-4">Appointment Details</h3>
         <div className="space-y-3 text-sm">
           <div>
@@ -833,7 +833,7 @@ function ConfirmationStep({ bookingData }: { bookingData: BookingData }) {
       <div className="mt-8">
         <a
           href="/"
-          className="inline-block px-6 py-3 bg-[#BF9961] text-white rounded-lg font-medium hover:bg-[#A67D4A] transition-colors"
+          className="inline-block px-6 py-3 bg-[#BF9961] text-white rounded-none font-medium hover:bg-[#A67D4A] transition-colors"
         >
           Back to Home
         </a>
