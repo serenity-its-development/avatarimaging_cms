@@ -206,7 +206,7 @@ function ProcedureStep({ procedures, selected, onSelect }: {
                     onClick={() => onSelect(proc)}
                     className={`
                       text-left p-4 rounded-lg border-2 transition-all hover:shadow-md
-                      ${selected === proc.id ? 'border-teal-600 bg-teal-50' : 'border-gray-200 hover:border-teal-300'}
+                      ${selected === proc.id ? 'border-[#BF9961] bg-amber-50' : 'border-gray-200 hover:border-amber-300'}
                     `}
                   >
                     <div className="flex justify-between items-start">
@@ -223,7 +223,7 @@ function ProcedureStep({ procedures, selected, onSelect }: {
                         </div>
                       </div>
                       <div className="ml-4 text-right">
-                        <div className="text-2xl font-bold text-teal-600">
+                        <div className="text-2xl font-bold text-[#BF9961]">
                           ${proc.base_price.toFixed(2)}
                         </div>
                       </div>
@@ -361,8 +361,8 @@ function DateTimeStep({ procedureName, onSelect }: {
                     aspect-square p-2 text-sm rounded transition-colors
                     ${!isCurrentMonth ? 'text-gray-300' : ''}
                     ${isPast ? 'text-gray-300 cursor-not-allowed' : ''}
-                    ${isSelected ? 'bg-teal-600 text-white font-bold' : ''}
-                    ${!isPast && isCurrentMonth && !isSelected ? 'hover:bg-teal-50' : ''}
+                    ${isSelected ? 'bg-[#BF9961] text-white font-bold' : ''}
+                    ${!isPast && isCurrentMonth && !isSelected ? 'hover:bg-amber-50' : ''}
                   `}
                 >
                   {date.getDate()}
@@ -379,7 +379,7 @@ function DateTimeStep({ procedureName, onSelect }: {
             <p className="text-gray-500 text-sm">Please select a date first</p>
           ) : loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-teal-600" />
+              <Loader2 className="w-6 h-6 animate-spin text-[#BF9961]" />
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto">
@@ -391,8 +391,8 @@ function DateTimeStep({ procedureName, onSelect }: {
                   className={`
                     p-3 rounded border text-sm font-medium transition-colors
                     ${!slot.available ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : ''}
-                    ${slot.available && selectedTime === slot.time ? 'bg-teal-600 text-white border-teal-600' : ''}
-                    ${slot.available && selectedTime !== slot.time ? 'border-gray-300 hover:border-teal-400 hover:bg-teal-50' : ''}
+                    ${slot.available && selectedTime === slot.time ? 'bg-[#BF9961] text-white border-[#BF9961]' : ''}
+                    ${slot.available && selectedTime !== slot.time ? 'border-gray-300 hover:border-[#D4AB6E] hover:bg-amber-50' : ''}
                   `}
                 >
                   {slot.time}
@@ -408,7 +408,7 @@ function DateTimeStep({ procedureName, onSelect }: {
         <div className="mt-6 flex justify-end">
           <button
             onClick={handleConfirm}
-            className="px-6 py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
+            className="px-6 py-3 bg-[#BF9961] text-white rounded-lg font-medium hover:bg-[#A67D4A] transition-colors"
           >
             Continue to Your Details
           </button>
@@ -445,7 +445,7 @@ function ContactStep({ data, onChange, onNext }: {
               type="text"
               value={data.name}
               onChange={e => onChange({ name: e.target.value })}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
               required
             />
           </div>
@@ -461,7 +461,7 @@ function ContactStep({ data, onChange, onNext }: {
               type="email"
               value={data.email}
               onChange={e => onChange({ email: e.target.value })}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
               required
             />
           </div>
@@ -477,7 +477,7 @@ function ContactStep({ data, onChange, onNext }: {
               type="tel"
               value={data.phone}
               onChange={e => onChange({ phone: e.target.value })}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
               required
             />
           </div>
@@ -490,7 +490,7 @@ function ContactStep({ data, onChange, onNext }: {
           <textarea
             value={data.notes}
             onChange={e => onChange({ notes: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
             rows={3}
             placeholder="Any additional information we should know..."
           />
@@ -499,7 +499,7 @@ function ContactStep({ data, onChange, onNext }: {
         <div className="flex justify-end pt-4">
           <button
             type="submit"
-            className="px-6 py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
+            className="px-6 py-3 bg-[#BF9961] text-white rounded-lg font-medium hover:bg-[#A67D4A] transition-colors"
           >
             Continue to Payment
           </button>
@@ -708,7 +708,7 @@ function PaymentStep({ bookingData, onUpdate, onSuccess, onError }: {
           )}
           <div className="border-t border-gray-200 pt-2 flex justify-between font-bold text-lg">
             <span>Total</span>
-            <span className="text-teal-600">${bookingData.final_price.toFixed(2)}</span>
+            <span className="text-[#BF9961]">${bookingData.final_price.toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -726,7 +726,7 @@ function PaymentStep({ bookingData, onUpdate, onSuccess, onError }: {
                 type="text"
                 value={discountCodeInput}
                 onChange={e => setDiscountCodeInput(e.target.value.toUpperCase())}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BF9961] focus:border-[#BF9961]"
                 placeholder="Enter code"
               />
             </div>
@@ -771,7 +771,7 @@ function PaymentStep({ bookingData, onUpdate, onSuccess, onError }: {
         <button
           type="submit"
           disabled={!stripe || processing}
-          className="w-full px-6 py-4 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full px-6 py-4 bg-[#BF9961] text-white rounded-lg font-medium hover:bg-[#A67D4A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {processing ? (
             <>
@@ -833,7 +833,7 @@ function ConfirmationStep({ bookingData }: { bookingData: BookingData }) {
       <div className="mt-8">
         <a
           href="/"
-          className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          className="inline-block px-6 py-3 bg-[#BF9961] text-white rounded-lg font-medium hover:bg-[#A67D4A] transition-colors"
         >
           Back to Home
         </a>
