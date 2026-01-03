@@ -142,14 +142,16 @@ export function useConfirmDialog() {
     setIsOpen(false)
   }
 
-  const DialogComponent = React.memo(() => (
+  const DialogComponent = () => (
     <Dialog
       {...config}
       isOpen={isOpen}
       onClose={handleCancel}
       onConfirm={handleConfirm}
     />
-  ))
+  )
+
+  DialogComponent.displayName = 'ConfirmDialogComponent'
 
   return { confirm, DialogComponent }
 }
@@ -172,13 +174,15 @@ export function useAlertDialog() {
     setIsOpen(false)
   }
 
-  const DialogComponent = React.memo(() => (
+  const DialogComponent = () => (
     <Dialog
       {...config}
       isOpen={isOpen}
       onClose={handleClose}
     />
-  ))
+  )
+
+  DialogComponent.displayName = 'AlertDialogComponent'
 
   return { alert, DialogComponent }
 }

@@ -14,7 +14,7 @@ const CATEGORIES = [
 ]
 
 export default function TemplatesPage() {
-  const { confirm, DialogComponent: ConfirmDialog } = useConfirmDialog()
+  const { confirm, DialogComponent } = useConfirmDialog()
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -572,7 +572,7 @@ function TemplateModal({
         </form>
       </div>
 
-      <ConfirmDialog />
+      <DialogComponent />
     </div>
   )
 }
