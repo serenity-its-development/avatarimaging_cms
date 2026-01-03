@@ -830,3 +830,229 @@ export function usePreferenceHistory() {
     queryFn: api.getPreferenceHistory,
   })
 }
+
+// =============================================================================
+// PROCEDURES
+// =============================================================================
+
+export function useProcedures(activeOnly: boolean = true) {
+  return useQuery({
+    queryKey: ['procedures', { activeOnly }],
+    queryFn: () => api.getProcedures(activeOnly),
+    staleTime: 60000,
+  })
+}
+
+export function useProcedure(id: string) {
+  return useQuery({
+    queryKey: ['procedures', id],
+    queryFn: () => api.getProcedure(id),
+    enabled: !!id,
+  })
+}
+
+export function useCreateProcedure() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.createProcedure,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['procedures'] })
+    },
+  })
+}
+
+export function useUpdateProcedure() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => api.updateProcedure(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['procedures'] })
+    },
+  })
+}
+
+export function useDeleteProcedure() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.deleteProcedure,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['procedures'] })
+    },
+  })
+}
+
+export function useCalculatePrice() {
+  return useMutation({
+    mutationFn: (data: { procedure_id: string; discount_code?: string }) =>
+      api.calculatePrice(data.procedure_id, data.discount_code),
+  })
+}
+
+// =============================================================================
+// DISCOUNT CODES
+// =============================================================================
+
+export function useDiscountCodes(activeOnly: boolean = true) {
+  return useQuery({
+    queryKey: ['discount-codes', { activeOnly }],
+    queryFn: () => api.getDiscountCodes(activeOnly),
+    staleTime: 60000,
+  })
+}
+
+export function useDiscountCode(id: string) {
+  return useQuery({
+    queryKey: ['discount-codes', id],
+    queryFn: () => api.getDiscountCode(id),
+    enabled: !!id,
+  })
+}
+
+export function useCreateDiscountCode() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.createDiscountCode,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['discount-codes'] })
+    },
+  })
+}
+
+export function useUpdateDiscountCode() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => api.updateDiscountCode(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['discount-codes'] })
+    },
+  })
+}
+
+export function useDeleteDiscountCode() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.deleteDiscountCode,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['discount-codes'] })
+    },
+  })
+}
+
+export function useValidateDiscountCode() {
+  return useMutation({
+    mutationFn: (data: { code: string; contact_id: string; procedure_id?: string; purchase_amount?: number }) =>
+      api.validateDiscountCode(data),
+  })
+}
+
+// =============================================================================
+// INFLUENCERS
+// =============================================================================
+
+export function useInfluencers(activeOnly: boolean = true) {
+  return useQuery({
+    queryKey: ['influencers', { activeOnly }],
+    queryFn: () => api.getInfluencers(activeOnly),
+    staleTime: 60000,
+  })
+}
+
+export function useInfluencer(id: string) {
+  return useQuery({
+    queryKey: ['influencers', id],
+    queryFn: () => api.getInfluencer(id),
+    enabled: !!id,
+  })
+}
+
+export function useInfluencerStats(id: string) {
+  return useQuery({
+    queryKey: ['influencers', id, 'stats'],
+    queryFn: () => api.getInfluencerStats(id),
+    enabled: !!id,
+  })
+}
+
+export function useCreateInfluencer() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.createInfluencer,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['influencers'] })
+    },
+  })
+}
+
+export function useUpdateInfluencer() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => api.updateInfluencer(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['influencers'] })
+    },
+  })
+}
+
+export function useDeleteInfluencer() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.deleteInfluencer,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['influencers'] })
+    },
+  })
+}
+
+// =============================================================================
+// PAYMENTS
+// =============================================================================
+
+export function useCreatePaymentIntent() {
+  return useMutation({
+    mutationFn: api.createPaymentIntent,
+  })
+}
+
+export function useBookingPayments(bookingId: string) {
+  return useQuery({
+    queryKey: ['payments', 'booking', bookingId],
+    queryFn: () => api.getBookingPayments(bookingId),
+    enabled: !!bookingId,
+  })
+}
+
+export function useContactPayments(contactId: string) {
+  return useQuery({
+    queryKey: ['payments', 'contact', contactId],
+    queryFn: () => api.getContactPayments(contactId),
+    enabled: !!contactId,
+  })
+}
+
+export function useRefundPayment() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, amount }: { id: string; amount?: number }) => api.refundPayment(id, amount),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] })
+    },
+  })
+}
+
+export function useRevenueSummary(startDate?: number, endDate?: number) {
+  return useQuery({
+    queryKey: ['payments', 'revenue-summary', { startDate, endDate }],
+    queryFn: () => api.getRevenueSummary(startDate, endDate),
+    staleTime: 30000,
+  })
+}

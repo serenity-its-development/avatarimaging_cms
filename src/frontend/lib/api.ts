@@ -1165,3 +1165,130 @@ export async function importPreferences(preferencesJson: string): Promise<UserPr
   })
   return result.data
 }
+
+// =============================================================================
+// PROCEDURES
+// =============================================================================
+
+export async function getProcedures(activeOnly: boolean = true) {
+  return apiRequest(`/api/procedures?active_only=${activeOnly}`)
+}
+
+export async function getProcedure(id: string) {
+  return apiRequest(`/api/procedures/${id}`)
+}
+
+export async function createProcedure(data: any) {
+  return apiRequest('/api/procedures', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export async function updateProcedure(id: string, data: any) {
+  return apiRequest(`/api/procedures/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+}
+
+export async function deleteProcedure(id: string) {
+  return apiRequest(`/api/procedures/${id}`, { method: 'DELETE' })
+}
+
+export async function calculatePrice(procedureId: string, discountCode?: string) {
+  return apiRequest('/api/procedures/calculate-price', {
+    method: 'POST',
+    body: JSON.stringify({ procedure_id: procedureId, discount_code: discountCode })
+  })
+}
+
+// =============================================================================
+// DISCOUNT CODES
+// =============================================================================
+
+export async function getDiscountCodes(activeOnly: boolean = true) {
+  return apiRequest(`/api/discount-codes?active_only=${activeOnly}`)
+}
+
+export async function getDiscountCode(id: string) {
+  return apiRequest(`/api/discount-codes/${id}`)
+}
+
+export async function createDiscountCode(data: any) {
+  return apiRequest('/api/discount-codes', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export async function updateDiscountCode(id: string, data: any) {
+  return apiRequest(`/api/discount-codes/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+}
+
+export async function deleteDiscountCode(id: string) {
+  return apiRequest(`/api/discount-codes/${id}`, { method: 'DELETE' })
+}
+
+export async function validateDiscountCode(data: { code: string; contact_id: string; procedure_id?: string; purchase_amount?: number }) {
+  return apiRequest('/api/discount-codes/validate', { method: 'POST', body: JSON.stringify(data) })
+}
+
+// =============================================================================
+// INFLUENCERS
+// =============================================================================
+
+export async function getInfluencers(activeOnly: boolean = true) {
+  return apiRequest(`/api/influencers?active_only=${activeOnly}`)
+}
+
+export async function getInfluencer(id: string) {
+  return apiRequest(`/api/influencers/${id}`)
+}
+
+export async function getInfluencerStats(id: string) {
+  return apiRequest(`/api/influencers/${id}/stats`)
+}
+
+export async function createInfluencer(data: any) {
+  return apiRequest('/api/influencers', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export async function updateInfluencer(id: string, data: any) {
+  return apiRequest(`/api/influencers/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+}
+
+export async function deleteInfluencer(id: string) {
+  return apiRequest(`/api/influencers/${id}`, { method: 'DELETE' })
+}
+
+// =============================================================================
+// PAYMENTS
+// =============================================================================
+
+export async function createPaymentIntent(data: {
+  booking_id: string
+  contact_id: string
+  amount: number
+  currency?: string
+  discount_code_id?: string
+  discount_amount?: number
+  influencer_id?: string
+  metadata?: any
+}) {
+  return apiRequest('/api/payments/create-intent', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export async function getBookingPayments(bookingId: string) {
+  return apiRequest(`/api/payments/booking/${bookingId}`)
+}
+
+export async function getContactPayments(contactId: string) {
+  return apiRequest(`/api/payments/contact/${contactId}`)
+}
+
+export async function refundPayment(id: string, amount?: number) {
+  return apiRequest(`/api/payments/${id}/refund`, {
+    method: 'POST',
+    body: JSON.stringify({ amount })
+  })
+}
+
+export async function getRevenueSummary(startDate?: number, endDate?: number) {
+  const params = new URLSearchParams()
+  if (startDate) params.append('start_date', startDate.toString())
+  if (endDate) params.append('end_date', endDate.toString())
+
+  return apiRequest(`/api/payments/revenue-summary?${params.toString()}`)
+}
